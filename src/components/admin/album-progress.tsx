@@ -1,0 +1,75 @@
+'use client';
+
+import { getAlbumProgress } from '@/actions/albums';
+import { reindexFailedPhotos } from '@/actions/photos';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+type Progress = Awaited<ReturnType<typeof getAlbumProgress>>;
+
+export function AlbumProgress({ albumId, refreshKey }: { albumId: string; refreshKey: number }) {
+  const [progress, setProgress] = useState<Progress | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const load = useCallback(async () => {
+    const data = await getAlbumProgress(albumId);
+    setProgress(data);
+    return data;
+  }, [albumId]);
+
+  // refreshKey é só um gatilho para reiniciar o poll depois de um upload —
+  // não é lido dentro do efeito.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refreshKey é gatilho, não dado lido no efeito
+  useEffect(() => {
+    let cancelled = false;
+
+    async function tick() {
+      const data = await load();
+      if (cancelled) return;
+      // Poll só enquanto houver trabalho em andamento — para sozinho quando zera.
+      if (data.pending > 0 || data.processing > 0) {
+        timerRef.current = setTimeout(tick, 5000);
+      }
+    }
+    tick();
+
+    return () => {
+      cancelled = true;
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [load, refreshKey]);
+
+  if (!progress) return null;
+
+  return (
+    <Card className="space-y-3">
+      <h2 className="font-semibold">Progresso da indexação</h2>
+      <div className="flex flex-wrap gap-2">
+        <Badge>{progress.awaiting_upload} enviando</Badge>
+        <Badge>{progress.pending} na fila</Badge>
+        <Badge variant="warning">{progress.processing} processando</Badge>
+        <Badge variant="success">{progress.indexed} indexadas</Badge>
+        {progress.failed > 0 && <Badge variant="destructive">{progress.failed} falharam</Badge>}
+      </div>
+      {progress.unindexedFaceCount > 0 && (
+        <p className="text-[var(--muted-foreground)] text-sm">
+          {progress.unindexedFaceCount} rosto(s) detectado(s) mas descartado(s) por baixa qualidade.
+        </p>
+      )}
+      {progress.failed > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            await reindexFailedPhotos(albumId);
+            load();
+          }}
+        >
+          Reprocessar falhas
+        </Button>
+      )}
+    </Card>
+  );
+}

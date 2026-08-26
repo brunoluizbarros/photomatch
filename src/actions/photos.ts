@@ -1,0 +1,67 @@
+'use server';
+
+import { requireAdmin } from '@/lib/auth/require-admin';
+import { db } from '@/lib/db/client';
+import { reindexFailedPhotos as reindexFailedPhotosInDb } from '@/lib/db/queue';
+import { albums, photos } from '@/lib/db/schemas';
+import { getPresignedUploadUrl, headObject } from '@/lib/storage/presign';
+import { randomFilename } from '@/lib/utils/random-filename';
+import { eq } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
+
+export async function requestPhotoUpload(input: {
+  albumId: string;
+  filename: string;
+  contentType: string;
+}) {
+  await requireAdmin();
+
+  const [album] = await db.select().from(albums).where(eq(albums.id, input.albumId));
+  if (!album) throw new Error('Album not found');
+
+  const storageKey = `albums/${album.id}/${randomFilename(input.filename)}`;
+  const uploadUrl = await getPresignedUploadUrl(storageKey, input.contentType);
+
+  const [photo] = await db
+    .insert(photos)
+    .values({ albumId: album.id, storageKey, status: 'awaiting_upload' })
+    .returning();
+
+  return { photoId: photo.id, uploadUrl };
+}
+
+// Confirma que o PUT presignado realmente chegou ao bucket (HeadObject) antes
+// de liberar a foto para a fila — evita fotos "pending" fantasma se o
+// navegador falhar silenciosamente entre o presign e o upload.
+export async function confirmPhotoUploaded(photoId: string) {
+  await requireAdmin();
+
+  const [photo] = await db.select().from(photos).where(eq(photos.id, photoId));
+  if (!photo) throw new Error('Photo not found');
+
+  const head = await headObject(photo.storageKey);
+
+  await db
+    .update(photos)
+    .set({ status: 'pending', bytes: head.ContentLength ?? null })
+    .where(eq(photos.id, photoId));
+
+  revalidatePath(`/admin/albums/${photo.albumId}`);
+}
+
+export async function reindexFailedPhotos(albumId: string) {
+  await requireAdmin();
+  await reindexFailedPhotosInDb(albumId);
+  revalidatePath(`/admin/albums/${albumId}`);
+}
+
+export async function getPhotosByAlbum(albumId: string, limit = 50, offset = 0) {
+  await requireAdmin();
+  return db
+    .select()
+    .from(photos)
+    .where(eq(photos.albumId, albumId))
+    .orderBy(photos.createdAt)
+    .limit(limit)
+    .offset(offset);
+}
