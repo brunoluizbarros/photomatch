@@ -33,7 +33,7 @@ export function AlbumCreateForm() {
 
   return (
     <Card className="space-y-4">
-      <h2 className="font-semibold">Novo álbum</h2>
+      <h2 className="font-display uppercase">Novo álbum</h2>
       <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
         <div className="min-w-48 flex-1 space-y-1">
           <Label htmlFor="name">Nome do evento</Label>

@@ -45,7 +45,7 @@ export function AlbumProgress({ albumId, refreshKey }: { albumId: string; refres
 
   return (
     <Card className="space-y-3">
-      <h2 className="font-semibold">Progresso da indexação</h2>
+      <h2 className="font-display uppercase">Progresso da indexação</h2>
       <div className="flex flex-wrap gap-2">
         <Badge>{progress.awaiting_upload} enviando</Badge>
         <Badge>{progress.pending} na fila</Badge>

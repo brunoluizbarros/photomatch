@@ -21,7 +21,7 @@ function Stat({
   return (
     <Card>
       <Icon className="size-6 text-[var(--accent)]" />
-      <p className="mt-2 font-black text-4xl text-[var(--foreground)] tracking-tight">{value}</p>
+      <p className="mt-2 font-display text-4xl text-[var(--foreground)]">{value}</p>
       <p className="text-[var(--muted-foreground)] text-sm">{label}</p>
     </Card>
   );
@@ -32,7 +32,7 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="font-black text-3xl text-[var(--foreground)] tracking-tight">Painel</h1>
+      <h1 className="font-display text-3xl text-[var(--foreground)] uppercase">Painel</h1>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat icon={FolderOpen} label="Álbuns" value={stats.albums.total} />
@@ -44,14 +44,14 @@ export default async function AdminPage() {
       <AlbumCreateForm />
 
       <div className="space-y-3">
-        <h2 className="font-bold text-[var(--foreground)] text-xl">Álbuns</h2>
+        <h2 className="font-display text-[var(--foreground)] text-xl uppercase">Álbuns</h2>
         {albums.length === 0 && (
           <p className="text-[var(--muted-foreground)] text-sm">Nenhum álbum criado ainda.</p>
         )}
         <div className="space-y-3">
           {albums.map((album) => (
             <Link key={album.id} href={`/admin/albums/${album.id}`}>
-              <Card className="flex items-center justify-between transition-shadow hover:shadow-md">
+              <Card className="flex items-center justify-between transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--foreground)]">
                 <div>
                   <p className="font-semibold text-[var(--foreground)]">{album.name}</p>
                   <p className="text-[var(--muted-foreground)] text-sm">

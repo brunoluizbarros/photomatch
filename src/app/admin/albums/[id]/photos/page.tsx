@@ -36,7 +36,7 @@ export default async function AlbumPhotosPage({
       </Button>
 
       <div>
-        <h1 className="font-bold text-2xl">Fotos — {album.name}</h1>
+        <h1 className="font-display text-2xl uppercase">Fotos — {album.name}</h1>
         <p className="text-[var(--muted-foreground)] text-sm">{total} foto(s) no total</p>
       </div>
 

@@ -21,7 +21,7 @@ export function QrCodeCard({ slug }: { slug: string }) {
 
   return (
     <Card className="flex flex-col items-center gap-3 text-center">
-      <h2 className="self-start font-semibold">QR Code</h2>
+      <h2 className="self-start font-display uppercase">QR Code</h2>
       <img src={dataUrl} alt="QR code da página pública do álbum" className="size-40 rounded-lg" />
       <p className="break-all text-[var(--muted-foreground)] text-xs">{publicUrl}</p>
       <a

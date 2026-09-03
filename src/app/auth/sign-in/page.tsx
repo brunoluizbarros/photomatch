@@ -61,11 +61,11 @@ function SignInForm() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[var(--primary)] to-black px-4">
-      <p className="mb-6 font-bold text-lg text-white">
+      <p className="mb-6 font-display text-lg text-white uppercase">
         PhotoMatch <span className="text-[var(--accent-light)]">admin</span>
       </p>
-      <Card className="w-full max-w-sm space-y-4 rounded-2xl shadow-xl">
-        <h1 className="font-black text-2xl text-[var(--foreground)] tracking-tight">Entrar</h1>
+      <Card className="w-full max-w-sm space-y-4">
+        <h1 className="font-display text-2xl text-[var(--foreground)] uppercase">Entrar</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="email">E-mail</Label>

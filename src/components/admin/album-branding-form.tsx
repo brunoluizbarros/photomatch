@@ -80,7 +80,7 @@ export function AlbumBrandingForm({ album }: { album: Album }) {
   return (
     <Card className="space-y-4">
       <div>
-        <h2 className="font-semibold">Personalizar página pública</h2>
+        <h2 className="font-display uppercase">Personalizar página pública</h2>
         <p className="text-[var(--muted-foreground)] text-sm">
           Template editorial (foto de capa full-bleed, tipografia serifada, superfície dia/noite) —
           cada evento pode trocar a foto de capa, o logo, a cor de destaque e o texto de

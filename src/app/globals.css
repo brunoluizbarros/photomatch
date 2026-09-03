@@ -1,20 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #0a0a0a;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --border: #e4e4e7;
-  --primary: #18181b;
-  --primary-foreground: #fafafa;
+  /* Paleta da marca PhotoMatch (creme/tinta/laranja queimado) — mesmas cores
+     da home e do template do evento, aplicada aqui no resto do produto
+     (admin, login) pros componentes compartilhados (Button/Card/Input)
+     saírem consistentes em todo o app, não só na página pública. */
+  --background: #fdfbf7;
+  --foreground: #2a2620;
+  --muted: #f1ece3;
+  --muted-foreground: #7a7267;
+  --border: #e3dbcb;
+  --primary: #2a2620;
+  --primary-foreground: #f3eee4;
   --destructive: #dc2626;
-  /* Acento do admin — portado do design system do ticketeria-techstage
-     (docs/ui-rules.md), trocando o roxo da marca original por azul. */
-  --accent: #2563eb;
-  --accent-dark: #1e40af;
-  --accent-light: #bfdbfe;
-  --accent-foreground: #fafafa;
+  --accent: #e8491d;
+  --accent-dark: #b83712;
+  --accent-light: #f6c7b3;
+  --accent-foreground: #fdfbf7;
 
   /* Template editorial da página pública de evento (/e/[slug]), portado do
      design do Réveillon Carneiros. Superfícies neutras fixas — a única cor
@@ -67,9 +69,9 @@
 }
 
 body {
-  background: var(--background);
+  background: var(--muted);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
 }
 
 /* ── Movimento da página pública do evento (/e/[slug]) ───────────────────

@@ -6,19 +6,8 @@ import { getAccentPreset } from '@/lib/theme/accent-presets';
 import { cn } from '@/lib/utils/cn';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Anton } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import type { CSSProperties } from 'react';
-
-// Carregada só nesta rota (não no layout raiz) para não pagar o preload em
-// /admin e nas demais páginas. Anton só existe em peso 400 no Google Fonts —
-// pedir outro peso quebra o build.
-const anton = Anton({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-anton',
-  display: 'swap',
-});
 
 // A superfície dia/noite depende do horário no momento do request.
 export const dynamic = 'force-dynamic';
@@ -49,7 +38,6 @@ export default async function PublicAlbumPage({
   return (
     <div
       className={cn(
-        anton.variable,
         surface === 'night' ? 'event-night' : 'event-day',
         'min-h-dvh bg-event-bg font-sans text-event-text antialiased',
       )}

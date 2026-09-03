@@ -15,7 +15,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-bold text-2xl">{album.name}</h1>
+        <h1 className="font-display text-2xl uppercase">{album.name}</h1>
         <p className="text-[var(--muted-foreground)] text-sm">
           Collection: <code>{album.rekognitionCollectionId}</code>
         </p>

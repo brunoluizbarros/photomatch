@@ -90,7 +90,7 @@ export function BulkUploader({ albumId, onDone }: { albumId: string; onDone: () 
 
   return (
     <Card className="space-y-3">
-      <h2 className="font-semibold">Enviar fotos</h2>
+      <h2 className="font-display uppercase">Enviar fotos</h2>
       <input
         ref={inputRef}
         type="file"

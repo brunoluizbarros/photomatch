@@ -9,7 +9,7 @@ export default async function AlbumTestPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="space-y-4">
-      <h1 className="font-bold text-2xl">Testar reconhecimento — {album.name}</h1>
+      <h1 className="font-display text-2xl uppercase">Testar reconhecimento — {album.name}</h1>
       <p className="text-[var(--muted-foreground)] text-sm">
         Sobe uma selfie e mostra todos os scores de similaridade, sem aplicar o threshold
         configurado — use para calibrar REKOGNITION_FACE_MATCH_THRESHOLD.
