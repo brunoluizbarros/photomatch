@@ -23,6 +23,9 @@ export const albums = pgTable('albums', {
   primaryColor: text('primary_color').notNull().default('#c0714a'),
   // Preset de fonte de exibição (título/eyebrow) — ver src/lib/theme/font-presets.ts.
   fontId: text('font_id').notNull().default('fraunces'),
+  // Preset de fundo do corpo (tudo abaixo do hero) — ver src/lib/theme/body-presets.ts.
+  // 'auto' preserva o dia/noite por horário; os demais fixam um fundo.
+  bodyColor: text('body_color').notNull().default('auto'),
   welcomeMessage: text('welcome_message'),
 
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

@@ -3,6 +3,7 @@ import { EventHero } from '@/components/public/event-hero';
 import { SelfieSearch } from '@/components/public/selfie-search';
 import { resolveSurface } from '@/lib/event-theme/surface';
 import { getAccentPreset } from '@/lib/theme/accent-presets';
+import { getBodyPreset } from '@/lib/theme/body-presets';
 import { ALL_FONT_VARIABLES, getFontPreset } from '@/lib/theme/font-presets';
 import { cn } from '@/lib/utils/cn';
 import { format } from 'date-fns';
@@ -25,13 +26,17 @@ export default async function PublicAlbumPage({
   const album = await getPublishedAlbumBySlug(slug);
   if (!album) notFound();
 
-  const surface = resolveSurface(theme);
   const eyebrow = album.eventDate
     ? format(album.eventDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
     : 'Galeria do evento';
   const welcomeMessage = album.welcomeMessage ?? 'Tire uma selfie e encontre suas fotos do evento.';
   const accent = getAccentPreset(album.primaryColor);
   const font = getFontPreset(album.fontId);
+  const body = getBodyPreset(album.bodyColor);
+  // Um fundo de corpo customizado (não "auto") fixa a superfície clara/escura
+  // certa pra esse fundo, em vez de trocar sozinha por horário — um preset
+  // escuro custom com o texto do modo dia (tinta) ficaria ilegível.
+  const surface = body.background ? body.mode : resolveSurface(theme);
 
   return (
     <div
@@ -44,6 +49,7 @@ export default async function PublicAlbumPage({
         {
           '--event-accent': accent.solid,
           '--font-display': `var(${font.cssVar})`,
+          ...(body.background ? { background: body.background } : null),
         } as CSSProperties
       }
     >
@@ -54,7 +60,7 @@ export default async function PublicAlbumPage({
         logoUrl={album.logoUrl}
         fallbackGradient={accent.gradient}
       />
-      <main className="relative z-10 mx-auto -mt-14 w-full max-w-[620px] px-5 pb-24 sm:-mt-16 sm:px-6">
+      <main className="relative z-10 mx-auto -mt-10 w-full max-w-[620px] px-5 pb-24 sm:-mt-12 sm:px-6">
         {/* bloom do accent atrás do card — profundidade sem imagem extra */}
         <div
           aria-hidden

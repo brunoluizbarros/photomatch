@@ -1,0 +1,1 @@
+ALTER TABLE "albums" ADD COLUMN "body_color" text DEFAULT 'auto' NOT NULL;

@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ACCENT_PRESETS, getAccentPreset } from '@/lib/theme/accent-presets';
+import { BODY_PRESETS, getBodyPreset } from '@/lib/theme/body-presets';
 import { FONT_PRESETS, getFontPreset } from '@/lib/theme/font-presets';
 import { cn } from '@/lib/utils/cn';
 import { useRouter } from 'next/navigation';
@@ -74,12 +75,42 @@ function FontPicker({ value, onChange }: { value: string; onChange: (id: string)
   );
 }
 
+// Coleção fixa de fundos pro corpo da página (abaixo do hero) — mesmo
+// padrão do AccentPresetPicker, cor sólida ou degradê, sem campo livre.
+function BodyPresetPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const selected = getBodyPreset(value).id;
+  return (
+    <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+      {BODY_PRESETS.map((preset) => (
+        <button
+          key={preset.id}
+          type="button"
+          onClick={() => onChange(preset.id)}
+          title={preset.label}
+          className={cn(
+            'overflow-hidden rounded-xl border-2 transition-all',
+            selected === preset.id
+              ? 'scale-[1.06] border-[var(--foreground)] shadow'
+              : 'border-transparent hover:border-[var(--border)]',
+          )}
+        >
+          <div className="h-10 w-full" style={{ background: preset.swatch }} />
+          <p className="truncate bg-[var(--muted)] px-1 py-1 text-center text-[10px] text-[var(--muted-foreground)] leading-tight">
+            {preset.label}
+          </p>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 type Album = {
   id: string;
   heroImageUrl: string | null;
   logoUrl: string | null;
   primaryColor: string;
   fontId: string;
+  bodyColor: string;
   welcomeMessage: string | null;
 };
 
@@ -89,6 +120,7 @@ export function AlbumBrandingForm({ album }: { album: Album }) {
   const [logoUrl, setLogoUrl] = useState(album.logoUrl ?? '');
   const [primaryColor, setPrimaryColor] = useState(getAccentPreset(album.primaryColor).id);
   const [fontId, setFontId] = useState(getFontPreset(album.fontId).id);
+  const [bodyColor, setBodyColor] = useState(getBodyPreset(album.bodyColor).id);
   const [welcomeMessage, setWelcomeMessage] = useState(album.welcomeMessage ?? '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -102,6 +134,7 @@ export function AlbumBrandingForm({ album }: { album: Album }) {
       logoUrl: logoUrl.trim() || null,
       primaryColor,
       fontId,
+      bodyColor,
       welcomeMessage: welcomeMessage.trim() || null,
     });
     setSaving(false);
@@ -150,6 +183,10 @@ export function AlbumBrandingForm({ album }: { album: Album }) {
         <div className="space-y-1">
           <Label>Fonte dos títulos</Label>
           <FontPicker value={fontId} onChange={setFontId} />
+        </div>
+        <div className="space-y-1">
+          <Label>Cor do corpo (fundo abaixo da capa)</Label>
+          <BodyPresetPicker value={bodyColor} onChange={setBodyColor} />
         </div>
         <div className="space-y-1">
           <Label htmlFor="welcomeMessage">Texto de boas-vindas</Label>

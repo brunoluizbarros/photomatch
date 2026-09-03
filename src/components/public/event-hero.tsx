@@ -17,7 +17,7 @@ export function EventHero({
   fallbackGradient: string;
 }) {
   return (
-    <section className="relative isolate h-[52svh] max-h-[520px] min-h-[340px] w-full overflow-hidden bg-[#1b1f0f] sm:h-[60svh] sm:max-h-[620px]">
+    <section className="relative isolate h-[42svh] max-h-[420px] min-h-[280px] w-full overflow-hidden bg-[#1b1f0f] sm:h-[46svh] sm:max-h-[480px]">
       {heroImageUrl ? (
         // Domínio arbitrário definido pelo admin — next/image exigiria estar
         // em remotePatterns, então usamos <img> puro aqui.
