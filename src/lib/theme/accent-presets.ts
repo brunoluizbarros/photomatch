@@ -59,6 +59,42 @@ export const ACCENT_PRESETS: AccentPreset[] = [
     solid: '#2c3119',
     gradient: 'linear-gradient(140deg, #2c3119 0%, #14120e 100%)',
   },
+  {
+    id: 'azul',
+    label: 'Azul',
+    solid: '#2563eb',
+    gradient: 'linear-gradient(140deg, #3b82f6 0%, #1e3a8a 100%)',
+  },
+  {
+    id: 'azul-claro',
+    label: 'Azul claro',
+    solid: '#38bdf8',
+    gradient: 'linear-gradient(140deg, #7dd3fc 0%, #2563eb 100%)',
+  },
+  {
+    id: 'roxo',
+    label: 'Roxo',
+    solid: '#7c3aed',
+    gradient: 'linear-gradient(140deg, #8b5cf6 0%, #4c1d95 100%)',
+  },
+  {
+    id: 'violeta',
+    label: 'Violeta',
+    solid: '#a855f7',
+    gradient: 'linear-gradient(140deg, #c084fc 0%, #86198f 100%)',
+  },
+  {
+    id: 'vermelho',
+    label: 'Vermelho',
+    solid: '#dc2626',
+    gradient: 'linear-gradient(140deg, #ef4444 0%, #7f1d1d 100%)',
+  },
+  {
+    id: 'rosa',
+    label: 'Rosa',
+    solid: '#db2777',
+    gradient: 'linear-gradient(140deg, #ec4899 0%, #831843 100%)',
+  },
 ];
 
 const DEFAULT_PRESET = ACCENT_PRESETS[0];
