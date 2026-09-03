@@ -16,6 +16,15 @@ export default function SignInPage() {
   );
 }
 
+// Só aceita caminho interno começando com uma única "/" — bloqueia
+// "https://evil.com" e "//evil.com" (protocol-relative), que um atacante
+// poderia colocar em ?callbackUrl= pra usar o login legítimo como trampolim
+// pra um site malicioso (open redirect).
+function safeCallbackUrl(value: string | null): string {
+  if (value?.startsWith('/') && !value.startsWith('//')) return value;
+  return '/admin';
+}
+
 function SignInForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -39,7 +48,7 @@ function SignInForm() {
     // Hard navigation: router.push reaproveita o Router Cache do Next, que já
     // guardou o redirect do middleware pra /auth/sign-in de antes do login —
     // só um reload completo força o middleware a reler o cookie novo.
-    window.location.href = searchParams.get('callbackUrl') ?? '/admin';
+    window.location.href = safeCallbackUrl(searchParams.get('callbackUrl'));
   }
 
   return (
