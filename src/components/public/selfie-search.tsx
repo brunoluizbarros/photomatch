@@ -5,9 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils/cn';
-import { ArrowUpRight, Camera, ImageOff, Loader2, ShieldCheck } from 'lucide-react';
+import {
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  Expand,
+  ImageOff,
+  Loader2,
+  ShieldCheck,
+  X,
+} from 'lucide-react';
 import Image from 'next/image';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Result = Awaited<ReturnType<typeof searchPhotosBySelfiePublic>>;
 
@@ -57,12 +66,90 @@ function StepDots({ step }: { step: Step }) {
   );
 }
 
+// Visualizador em tela cheia — abre por cima do fluxo em vez de navegar pra
+// outra página/aba. Fecha com Escape, clique no fundo, ou no X; setas do
+// teclado (ou os botões) andam entre as fotos do resultado.
+function PhotoModal({
+  photos,
+  index,
+  onClose,
+  onNavigate,
+}: {
+  photos: Result;
+  index: number;
+  onClose: () => void;
+  onNavigate: (index: number) => void;
+}) {
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowRight' && index < photos.length - 1) onNavigate(index + 1);
+      if (e.key === 'ArrowLeft' && index > 0) onNavigate(index - 1);
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [index, photos.length, onClose, onNavigate]);
+
+  return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: fechar no clique do fundo é reforço do botão X e do Escape, não a única forma de fechar
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 grid size-10 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+        aria-label="Fechar"
+      >
+        <X className="size-5" />
+      </button>
+
+      {index > 0 && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onNavigate(index - 1);
+          }}
+          className="absolute left-2 grid size-10 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:left-4"
+          aria-label="Foto anterior"
+        >
+          <ChevronLeft className="size-5" />
+        </button>
+      )}
+      {index < photos.length - 1 && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onNavigate(index + 1);
+          }}
+          className="absolute right-2 grid size-10 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-4"
+          aria-label="Próxima foto"
+        >
+          <ChevronRight className="size-5" />
+        </button>
+      )}
+
+      <img
+        src={photos[index].url}
+        alt="Foto do evento"
+        className="max-h-[85svh] max-w-[92vw] rounded-[10px] object-contain"
+      />
+    </div>
+  );
+}
+
 export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMessage: string }) {
   const [step, setStep] = useState<Step>('consent');
   const [consented, setConsented] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<Result>([]);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File | undefined) {
@@ -194,7 +281,7 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
               </h2>
               {results.length > 0 && (
                 <span className="text-[11px] text-event-text-mute uppercase tracking-[0.16em]">
-                  Toque para abrir
+                  Toque para ampliar
                 </span>
               )}
             </div>
@@ -216,11 +303,10 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
             ) : (
               <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
                 {results.map((photo, i) => (
-                  <a
+                  <button
                     key={photo.id}
-                    href={photo.url}
-                    target="_blank"
-                    rel="noreferrer"
+                    type="button"
+                    onClick={() => setSelectedIndex(i)}
                     className="event-rise group relative block overflow-hidden rounded-[10px] bg-event-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-event-accent"
                     style={{ animationDelay: `${Math.min(i, 14) * 45}ms` }}
                   >
@@ -232,8 +318,8 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
                       className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
                     />
                     <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(12,10,6,0.55))] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                    <ArrowUpRight className="pointer-events-none absolute right-2 bottom-2 size-4 text-event-cream opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  </a>
+                    <Expand className="pointer-events-none absolute right-2 bottom-2 size-4 text-event-cream opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  </button>
                 ))}
               </div>
             )}
@@ -251,6 +337,15 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
           </div>
         )}
       </div>
+
+      {selectedIndex !== null && (
+        <PhotoModal
+          photos={results}
+          index={selectedIndex}
+          onClose={() => setSelectedIndex(null)}
+          onNavigate={setSelectedIndex}
+        />
+      )}
     </div>
   );
 }
