@@ -1,3 +1,4 @@
+import { getPendingAccessRequestCount } from '@/actions/access-requests';
 import { getDashboardStats } from '@/actions/albums';
 import { getStatsByAlbum } from '@/actions/analytics';
 import { AlbumCreateWizard } from '@/components/admin/album-create-wizard';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Camera, CheckCircle2, FolderOpen, ScanFace } from 'lucide-react';
+import { Camera, CheckCircle2, FolderOpen, Inbox, ScanFace } from 'lucide-react';
 import Link from 'next/link';
 
 const DEFAULT_WINDOW_DAYS = 30;
@@ -20,7 +21,11 @@ export default async function AdminPage({
   const { d } = await searchParams;
   const days = Number(d) || DEFAULT_WINDOW_DAYS;
 
-  const [stats, albumStats] = await Promise.all([getDashboardStats(), getStatsByAlbum(days)]);
+  const [stats, albumStats, pendingRequests] = await Promise.all([
+    getDashboardStats(),
+    getStatsByAlbum(days),
+    getPendingAccessRequestCount(),
+  ]);
   const maxSearches = Math.max(1, ...albumStats.map((a) => a.searches));
 
   return (
@@ -30,11 +35,12 @@ export default async function AdminPage({
         <AlbumCreateWizard />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <Stat icon={FolderOpen} label="Álbuns" value={stats.albums.total} />
         <Stat icon={CheckCircle2} label="Publicados" value={stats.albums.published} />
         <Stat icon={Camera} label="Fotos" value={stats.photos.total} />
         <Stat icon={ScanFace} label="Indexadas" value={stats.photos.indexed} />
+        <Stat icon={Inbox} label="Pedidos pendentes" value={pendingRequests} />
       </div>
 
       <AnalyticsPanel days={days} basePath="/admin" />

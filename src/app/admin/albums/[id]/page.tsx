@@ -1,4 +1,5 @@
 import { getAlbum } from '@/actions/albums';
+import { AccessRequestsPanel } from '@/components/admin/access-requests-panel';
 import { AlbumBrandingForm } from '@/components/admin/album-branding-form';
 import { AnalyticsPanel } from '@/components/admin/analytics-panel';
 import { PublishToggle } from '@/components/admin/publish-toggle';
@@ -56,6 +57,8 @@ export default async function AlbumPage({
       </div>
 
       <AnalyticsPanel days={days} albumId={album.id} basePath={`/admin/albums/${album.id}`} />
+
+      <AccessRequestsPanel albumId={album.id} />
 
       <QrCodeCard slug={album.slug} />
 

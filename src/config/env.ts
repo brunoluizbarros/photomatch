@@ -22,6 +22,15 @@ export const env = createEnv({
     // Teto de chamadas/s que o worker se impõe, abaixo da cota da conta AWS na região
     // (50 TPS em us-east-1, 5 em sa-east-1).
     REKOGNITION_MAX_TPS: z.coerce.number().positive().default(40),
+
+    // Notificação de pedido de acesso (src/lib/notify/*) — opcionais: sem elas,
+    // o pedido continua sendo salvo normalmente, só o envio fica marcado como
+    // falho no painel (ver access-requests-panel.tsx), nunca falha silenciosa.
+    RESEND_API_KEY: z.string().optional(),
+    RESEND_FROM_EMAIL: z.string().optional(),
+    TWILIO_ACCOUNT_SID: z.string().optional(),
+    TWILIO_AUTH_TOKEN: z.string().optional(),
+    TWILIO_WHATSAPP_FROM: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().default('http://localhost:3000'),
@@ -40,6 +49,11 @@ export const env = createEnv({
     REKOGNITION_SECRET_ACCESS_KEY: process.env.REKOGNITION_SECRET_ACCESS_KEY,
     REKOGNITION_FACE_MATCH_THRESHOLD: process.env.REKOGNITION_FACE_MATCH_THRESHOLD,
     REKOGNITION_MAX_TPS: process.env.REKOGNITION_MAX_TPS,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+    TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
+    TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
+    TWILIO_WHATSAPP_FROM: process.env.TWILIO_WHATSAPP_FROM,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
