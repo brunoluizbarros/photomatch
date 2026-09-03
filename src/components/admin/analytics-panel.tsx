@@ -17,7 +17,7 @@ function DailyBars({ series }: { series: Awaited<ReturnType<typeof getDailySerie
   const max = Math.max(1, ...series.map((d) => d.visits));
   return (
     <figure className="m-0">
-      <div className="flex h-40 items-end gap-[3px]">
+      <div className="flex h-24 items-end gap-[3px]">
         {series.map((d) => (
           <div
             key={d.day}
@@ -93,7 +93,7 @@ export async function AnalyticsPanel({
         <Stat icon={Wand2} label="Pessoas únicas" value={stats.people} />
       </div>
 
-      <div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-5">
+      <div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-4">
         <DailyBars series={series} />
       </div>
     </div>

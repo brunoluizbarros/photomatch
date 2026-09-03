@@ -15,11 +15,15 @@ export function Stat({
   hint?: string;
 }) {
   return (
-    <Card>
-      <Icon className="size-6 text-[var(--accent)]" />
-      <p className="mt-2 font-display text-4xl text-[var(--foreground)]">{value}</p>
-      <p className="text-[var(--muted-foreground)] text-sm">{label}</p>
-      {hint && <p className="mt-1 text-[var(--muted-foreground)] text-xs">{hint}</p>}
+    <Card className="p-3">
+      <div className="flex items-center gap-2.5">
+        <Icon className="size-5 shrink-0 text-[var(--accent)]" />
+        <div className="min-w-0">
+          <p className="font-display text-2xl text-[var(--foreground)] leading-none">{value}</p>
+          <p className="truncate text-[var(--muted-foreground)] text-xs">{label}</p>
+        </div>
+      </div>
+      {hint && <p className="mt-1.5 text-[var(--muted-foreground)] text-[11px]">{hint}</p>}
     </Card>
   );
 }
