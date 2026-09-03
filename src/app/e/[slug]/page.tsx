@@ -44,7 +44,7 @@ export default async function PublicAlbumPage({
       className={cn(
         fraunces.variable,
         surface === 'night' ? 'event-night' : 'event-day',
-        'min-h-dvh bg-event-bg font-sans text-event-text',
+        'min-h-dvh bg-event-bg font-sans text-event-text antialiased',
       )}
       style={{ '--event-accent': album.primaryColor } as CSSProperties}
     >
@@ -54,8 +54,17 @@ export default async function PublicAlbumPage({
         heroImageUrl={album.heroImageUrl}
         logoUrl={album.logoUrl}
       />
-      <main className="mx-auto w-full px-[22px] pt-6 pb-16">
+      <main className="relative z-10 mx-auto -mt-14 w-full max-w-[620px] px-5 pb-24 sm:-mt-16 sm:px-6">
+        {/* bloom do accent atrás do card — profundidade sem imagem extra */}
+        <div
+          aria-hidden
+          className="-z-10 -top-24 pointer-events-none absolute left-1/2 size-72 -translate-x-1/2 rounded-full bg-event-accent/25 blur-[90px]"
+        />
         <SelfieSearch slug={album.slug} welcomeMessage={welcomeMessage} />
+        <div className="mx-auto mt-10 mb-4 h-px w-8 bg-event-line" />
+        <p className="text-center text-[11px] text-event-text-mute uppercase tracking-[0.2em]">
+          {album.name}
+        </p>
       </main>
     </div>
   );

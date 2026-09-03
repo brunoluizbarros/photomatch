@@ -60,3 +60,75 @@ body {
   color: var(--foreground);
   font-family: system-ui, -apple-system, sans-serif;
 }
+
+/* ── Movimento da página pública do evento (/e/[slug]) ───────────────────
+   Único lugar do projeto com @keyframes. A troca de passo remonta o painel
+   via key= no React (selfie-search.tsx) e a animação toca de novo sozinha. */
+@keyframes event-kenburns {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes event-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Longhands de propósito, nunca o shorthand `animation:` — CSS fora de
+   @layer sempre vence sobre @layer utilities no Tailwind v4 (cascade
+   layers reais). Se isso usasse o shorthand, resetaria animation-delay
+   pra 0s e destruiria qualquer [animation-delay:...] aplicado no mesmo
+   elemento — o stagger abaixo morreria silenciosamente. */
+.event-kenburns {
+  animation-name: event-kenburns;
+  animation-duration: 26s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+  transform-origin: 50% 45%;
+}
+
+.event-rise {
+  animation-name: event-rise;
+  animation-duration: 0.55s;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+/* Stagger dos filhos diretos de um painel (máx. 5 níveis — o que um passo
+   do fluxo de busca tem hoje). */
+.event-stagger > * {
+  animation-name: event-rise;
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+  animation-fill-mode: both;
+}
+.event-stagger > *:nth-child(2) {
+  animation-delay: 70ms;
+}
+.event-stagger > *:nth-child(3) {
+  animation-delay: 140ms;
+}
+.event-stagger > *:nth-child(4) {
+  animation-delay: 210ms;
+}
+.event-stagger > *:nth-child(5) {
+  animation-delay: 280ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-kenburns,
+  .event-rise,
+  .event-stagger > * {
+    animation: none !important;
+  }
+}
