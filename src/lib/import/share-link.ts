@@ -1,6 +1,23 @@
 // Resolve um link público de compartilhamento (Google Drive ou Dropbox) numa
 // lista de imagens baixáveis, sem OAuth — o admin só cola o link.
 export type RemoteImage = { filename: string; url: string };
+export type ShareProvider = 'drive' | 'dropbox';
+
+const DRIVE_HOSTS = new Set(['drive.google.com', 'docs.google.com']);
+const DROPBOX_HOSTS = new Set(['dropbox.com', 'www.dropbox.com']);
+
+// Detecta o provedor pelo host do link — única fonte de verdade, usada tanto
+// aqui quanto na validação client-side do seletor Drive/Dropbox no admin.
+export function detectShareProvider(rawUrl: string): ShareProvider | null {
+  try {
+    const host = new URL(rawUrl).hostname.toLowerCase();
+    if (DRIVE_HOSTS.has(host)) return 'drive';
+    if (DROPBOX_HOSTS.has(host)) return 'dropbox';
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 function driveDownloadUrl(fileId: string): string {
   // ?confirm=t evita a interstitial de "verificar vírus" em arquivos maiores —
@@ -61,9 +78,9 @@ function resolveDropboxUrl(url: URL): RemoteImage {
 
 export async function resolveShareLink(rawUrl: string): Promise<RemoteImage[]> {
   const url = new URL(rawUrl);
-  const host = url.hostname.toLowerCase();
+  const provider = detectShareProvider(rawUrl);
 
-  if (host === 'drive.google.com' || host === 'docs.google.com') {
+  if (provider === 'drive') {
     const parsed = parseDriveUrl(url);
     if (!parsed) throw new Error('Não reconheci esse link do Google Drive.');
     return parsed.type === 'folder'
@@ -71,7 +88,7 @@ export async function resolveShareLink(rawUrl: string): Promise<RemoteImage[]> {
       : [{ filename: `${parsed.id}.jpg`, url: driveDownloadUrl(parsed.id) }];
   }
 
-  if (host === 'dropbox.com' || host === 'www.dropbox.com') {
+  if (provider === 'dropbox') {
     return [resolveDropboxUrl(url)];
   }
 
