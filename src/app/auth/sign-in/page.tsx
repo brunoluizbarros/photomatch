@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authClient } from '@/lib/auth/client';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { type FormEvent, Suspense, useState } from 'react';
 
 export default function SignInPage() {
@@ -17,7 +17,6 @@ export default function SignInPage() {
 }
 
 function SignInForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,7 +36,10 @@ function SignInForm() {
       return;
     }
 
-    router.push(searchParams.get('callbackUrl') ?? '/admin');
+    // Hard navigation: router.push reaproveita o Router Cache do Next, que já
+    // guardou o redirect do middleware pra /auth/sign-in de antes do login —
+    // só um reload completo força o middleware a reler o cookie novo.
+    window.location.href = searchParams.get('callbackUrl') ?? '/admin';
   }
 
   return (
