@@ -51,7 +51,7 @@ export default async function AdminPage() {
         <div className="space-y-3">
           {albums.map((album) => (
             <Link key={album.id} href={`/admin/albums/${album.id}`}>
-              <Card className="flex items-center justify-between transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--foreground)]">
+              <Card className="flex items-center justify-between transition-colors hover:border-[var(--accent)]">
                 <div>
                   <p className="font-semibold text-[var(--foreground)]">{album.name}</p>
                   <p className="text-[var(--muted-foreground)] text-sm">

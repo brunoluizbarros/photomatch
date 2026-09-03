@@ -5,7 +5,9 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        'rounded-md border-2 border-[var(--foreground)] bg-[var(--background)] p-5 shadow-[4px_4px_0_0_var(--foreground)]',
+        // Linha fina + mesmo fundo da página — igual à grade da home, sem
+        // "cartão" destacado (sem sombra, sem borda grossa).
+        'rounded-md border border-[var(--border)] bg-[var(--muted)] p-5',
         className,
       )}
       {...props}

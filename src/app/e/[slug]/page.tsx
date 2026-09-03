@@ -6,15 +6,24 @@ import { getAccentPreset } from '@/lib/theme/accent-presets';
 import { cn } from '@/lib/utils/cn';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Fraunces } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import type { CSSProperties } from 'react';
 
+// Carregada só nesta rota — a marca do PRODUTO (home/admin) usa Anton, mas a
+// página do evento em si mantém a identidade editorial própria (serifada),
+// independente do sistema visual do resto do PhotoMatch. Por isso o
+// --font-display global (Anton) é sobrescrito localmente aqui, só para esta
+// subárvore, em vez de mudar o mapeamento em @theme inline.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  variable: '--font-fraunces',
+  display: 'swap',
+});
+
 // A superfície dia/noite depende do horário no momento do request.
 export const dynamic = 'force-dynamic';
-
-// Chaves fixas pro texto repetido do ticker (sempre 6 cópias, nunca
-// reordena) — só pra não usar índice de array como key.
-const TICKER_REPEAT_KEYS = ['t1', 't2', 't3', 't4', 't5', 't6'];
 
 export default async function PublicAlbumPage({
   params,
@@ -38,33 +47,17 @@ export default async function PublicAlbumPage({
   return (
     <div
       className={cn(
+        fraunces.variable,
         surface === 'night' ? 'event-night' : 'event-day',
         'min-h-dvh bg-event-bg font-sans text-event-text antialiased',
       )}
-      style={{ '--event-accent': accent.solid } as CSSProperties}
+      style={
+        {
+          '--event-accent': accent.solid,
+          '--font-display': 'var(--font-fraunces)',
+        } as CSSProperties
+      }
     >
-      {/* Ticker — texto repetido rolando, motivo do site de corrida usado
-          como referência. Duplicado 2x pro loop de -50% ficar contínuo. */}
-      <div
-        aria-hidden
-        className="relative z-10 overflow-hidden border-event-line border-y bg-event-accent py-2"
-      >
-        <div className="event-ticker-track flex w-max gap-8 whitespace-nowrap">
-          {[0, 1].map((half) => (
-            <span
-              key={half}
-              className="flex items-center gap-8 pr-8 font-display text-[13px] text-event-cream uppercase tracking-[0.08em]"
-            >
-              {TICKER_REPEAT_KEYS.map((key) => (
-                <span key={key} className="flex items-center gap-8">
-                  {album.name} <span>•</span> Galeria do evento <span>•</span>
-                </span>
-              ))}
-            </span>
-          ))}
-        </div>
-      </div>
-
       <EventHero
         title={album.name}
         eyebrow={eyebrow}
