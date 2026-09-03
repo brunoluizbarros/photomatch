@@ -273,7 +273,7 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
 
         {view === 'results' && (
           <div className="space-y-6">
-            <div className="flex items-baseline justify-between gap-3">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
               <h2 className="font-display font-semibold text-[24px] text-event-text">
                 {results.length === 0
                   ? 'Nada ainda'
