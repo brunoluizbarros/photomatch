@@ -57,14 +57,29 @@ export async function confirmPhotoUploaded(photoId: string) {
 // link (1 request HTTP, sem baixar as imagens) e enfileira: baixar centenas
 // de fotos aqui dentro estouraria o timeout da Server Action. O worker
 // (pnpm worker:face-indexer) baixa cada uma via `photos.sourceUrl`.
+//
+// Retorna {ok, error} em vez de lançar: as falhas daqui (link não suportado,
+// pasta privada, pasta do Dropbox) são todas mensagens que o admin precisa
+// ler pra corrigir o link — e o Next redige a mensagem de erros lançados em
+// Server Actions no build de produção, trocando por um texto genérico + digest.
 export async function importFromShareLink(input: { albumId: string; url: string }) {
   await requireAdmin();
 
   const [album] = await db.select().from(albums).where(eq(albums.id, input.albumId));
-  if (!album) throw new Error('Album not found');
+  if (!album) return { ok: false as const, error: 'Álbum não encontrado.' };
 
-  const images = await resolveShareLink(input.url);
-  if (images.length > MAX_IMPORT) throw new Error(`Limite de ${MAX_IMPORT} fotos por importação.`);
+  let images: Awaited<ReturnType<typeof resolveShareLink>>;
+  try {
+    images = await resolveShareLink(input.url);
+  } catch (err) {
+    return {
+      ok: false as const,
+      error: err instanceof Error ? err.message : 'Não foi possível resolver esse link.',
+    };
+  }
+  if (images.length > MAX_IMPORT) {
+    return { ok: false as const, error: `Limite de ${MAX_IMPORT} fotos por importação.` };
+  }
 
   await db.insert(photos).values(
     images.map((img) => ({
@@ -77,7 +92,7 @@ export async function importFromShareLink(input: { albumId: string; url: string 
 
   revalidatePath(`/admin/albums/${album.id}`);
   revalidatePath(`/admin/albums/${album.id}/photos`);
-  return { count: images.length };
+  return { ok: true as const, count: images.length };
 }
 
 export async function reindexFailedPhotos(albumId: string) {

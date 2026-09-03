@@ -18,16 +18,15 @@ export function ImportFromLink({ albumId, onDone }: { albumId: string; onDone: (
     setLoading(true);
     setError(null);
     setImported(null);
-    try {
-      const { count } = await importFromShareLink({ albumId, url });
-      setImported(count);
+    const result = await importFromShareLink({ albumId, url });
+    if (!result.ok) {
+      setError(result.error);
+    } else {
+      setImported(result.count);
       setUrl('');
       onDone();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível importar esse link.');
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
 
   return (

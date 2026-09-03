@@ -51,6 +51,11 @@ export async function getPublishedAlbumBySlug(slug: string) {
   return album ?? null;
 }
 
+// Retorna {ok, error} em vez de lançar pro caso esperado (slug duplicado):
+// o Next redige a mensagem de erros lançados em Server Actions no build de
+// produção (substitui por um texto genérico + digest, de propósito, pra não
+// vazar detalhe de servidor) — só falhas verdadeiramente inesperadas (AWS,
+// banco) devem continuar lançando e caindo nesse comportamento redigido.
 export async function createAlbum(input: { name: string; slug: string; eventDate?: string }) {
   await requireAdmin();
 
@@ -62,7 +67,7 @@ export async function createAlbum(input: { name: string; slug: string; eventDate
     .select({ id: albums.id })
     .from(albums)
     .where(eq(albums.slug, input.slug));
-  if (taken) throw new Error('Já existe um álbum com esse slug.');
+  if (taken) return { ok: false as const, error: 'Já existe um álbum com esse slug.' };
 
   // Cria a Collection na AWS antes do INSERT: se a AWS falhar, não sobra
   // linha órfã no Postgres.
@@ -84,7 +89,7 @@ export async function createAlbum(input: { name: string; slug: string; eventDate
     .returning();
 
   revalidatePath('/admin');
-  return album;
+  return { ok: true as const, album };
 }
 
 export async function setPublished(albumId: string, isPublished: boolean) {

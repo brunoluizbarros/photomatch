@@ -13,7 +13,8 @@ import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 
-type CreatedAlbum = Awaited<ReturnType<typeof createAlbum>>;
+type CreateAlbumResult = Awaited<ReturnType<typeof createAlbum>>;
+type CreatedAlbum = Extract<CreateAlbumResult, { ok: true }>['album'];
 
 const STEP_LABELS = ['Dados', 'Design', 'Fotos'] as const;
 
@@ -56,13 +57,13 @@ function StepBasics({ onCreated }: { onCreated: (album: CreatedAlbum) => void })
     event.preventDefault();
     setLoading(true);
     setError(null);
-    try {
-      const album = await createAlbum({ name, slug, eventDate: eventDate || undefined });
-      onCreated(album);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível criar o álbum.');
+    const result = await createAlbum({ name, slug, eventDate: eventDate || undefined });
+    if (!result.ok) {
+      setError(result.error);
       setLoading(false);
+      return;
     }
+    onCreated(result.album);
   }
 
   return (
