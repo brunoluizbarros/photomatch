@@ -28,6 +28,13 @@
   --event-sand: #eae2d5;
   --event-ink: #2a2620;
   --event-accent: #c0714a;
+
+  /* Fonte de exibição — default do admin/home. Runtime var real (não um
+     token @theme inline) porque a página do evento sobrescreve inline por
+     álbum via style="--font-display:var(--font-opt-x)"; se o token fosse
+     inline, Tailwind gravaria a referência a --font-anton direto na classe
+     .font-display no build, e o override por álbum nunca seria lido. */
+  --font-display: var(--font-anton);
 }
 
 @theme inline {
@@ -45,7 +52,7 @@
   --color-event-line: var(--event-line);
   --color-event-accent: var(--event-accent);
   --color-event-cream: var(--event-cream);
-  --font-display: var(--font-anton);
+  --font-display: var(--font-display);
 }
 
 .event-day {

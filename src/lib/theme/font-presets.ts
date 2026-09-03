@@ -72,7 +72,7 @@ export const FONT_PRESETS: FontPreset[] = [
   { id: 'fraunces', label: 'Fraunces', variable: fraunces.variable, cssVar: '--font-opt-fraunces' },
   {
     id: 'amagro',
-    label: 'Amagro (Réveillon)',
+    label: 'Amagro',
     variable: amagro.variable,
     cssVar: '--font-opt-amagro',
   },

@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 // evento.
 export function QrCodeCard({ slug }: { slug: string }) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [publicUrl, setPublicUrl] = useState('');
 
   useEffect(() => {
@@ -16,6 +17,23 @@ export function QrCodeCard({ slug }: { slug: string }) {
     setPublicUrl(url);
     QRCode.toDataURL(url, { width: 480, margin: 2 }).then(setDataUrl);
   }, [slug]);
+
+  // Safari e várias webviews de Android ignoram o atributo `download` em
+  // links `data:` — abrem a imagem em vez de salvar. Um Blob URL baixa como
+  // arquivo de verdade em todos os navegadores.
+  useEffect(() => {
+    if (!dataUrl) return;
+    let url: string | undefined;
+    fetch(dataUrl)
+      .then((res) => res.blob())
+      .then((blob) => {
+        url = URL.createObjectURL(blob);
+        setBlobUrl(url);
+      });
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [dataUrl]);
 
   if (!dataUrl) return null;
 
@@ -25,7 +43,7 @@ export function QrCodeCard({ slug }: { slug: string }) {
       <img src={dataUrl} alt="QR code da página pública do álbum" className="size-40 rounded-lg" />
       <p className="break-all text-[var(--muted-foreground)] text-xs">{publicUrl}</p>
       <a
-        href={dataUrl}
+        href={blobUrl ?? dataUrl}
         download={`qrcode-${slug}.png`}
         className="inline-flex h-11 items-center justify-center rounded-xl bg-[var(--primary)] px-5 font-semibold text-[var(--primary-foreground)] text-sm transition-colors hover:opacity-90"
       >
