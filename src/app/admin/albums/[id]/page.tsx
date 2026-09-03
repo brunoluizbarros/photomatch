@@ -2,6 +2,8 @@ import { getAlbum } from '@/actions/albums';
 import { AlbumBrandingForm } from '@/components/admin/album-branding-form';
 import { AlbumDetail } from '@/components/admin/album-detail';
 import { PublishToggle } from '@/components/admin/publish-toggle';
+import { Button } from '@/components/ui/button';
+import { Images, ScanFace } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -21,13 +23,19 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
 
       <PublishToggle albumId={album.id} slug={album.slug} initialIsPublished={album.isPublished} />
 
-      <div className="flex gap-4">
-        <Link href={`/admin/albums/${album.id}/photos`} className="text-sm underline">
-          Ver galeria de fotos
-        </Link>
-        <Link href={`/admin/albums/${album.id}/test`} className="text-sm underline">
-          Testar reconhecimento facial
-        </Link>
+      <div className="flex flex-wrap gap-3">
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/admin/albums/${album.id}/photos`}>
+            <Images className="size-4" />
+            Ver galeria de fotos
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/admin/albums/${album.id}/test`}>
+            <ScanFace className="size-4" />
+            Testar reconhecimento facial
+          </Link>
+        </Button>
       </div>
 
       <AlbumBrandingForm album={album} />
