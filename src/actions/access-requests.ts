@@ -7,10 +7,13 @@ import { access_requests, albums, user } from '@/lib/db/schemas';
 import { sendEmail } from '@/lib/notify/email';
 import { sendWhatsApp } from '@/lib/notify/whatsapp';
 import { isRateLimited } from '@/lib/rate-limit';
+import { escapeHtml } from '@/lib/utils/escape-html';
 import { toE164BR } from '@/lib/utils/phone';
 import { and, desc, eq, ilike, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function getClientIp() {
   const headerList = await headers();
@@ -20,6 +23,9 @@ async function getClientIp() {
 // Público, sem login: convidado busca o evento pelo nome na home. Só álbuns
 // publicados aparecem — os mesmos que já são acessíveis via /e/[slug].
 export async function searchPublishedAlbumsByName(query: string) {
+  const ip = await getClientIp();
+  if (isRateLimited(`album-search:${ip}`, 30, 60_000)) return [];
+
   const trimmed = query.trim();
   if (trimmed.length < 2) return [];
   return db
@@ -44,6 +50,15 @@ export async function requestAlbumAccess(input: {
     return { ok: false as const, error: 'Muitos pedidos em pouco tempo. Espere um minuto.' };
   }
 
+  const name = input.name.trim();
+  const email = input.email.trim();
+  const phone = input.phone.trim();
+  if (!EMAIL_RE.test(email)) return { ok: false as const, error: 'E-mail inválido.' };
+  if (!phone) return { ok: false as const, error: 'Telefone inválido.' };
+  if (name.length > 200 || email.length > 200 || phone.length > 40) {
+    return { ok: false as const, error: 'Dados inválidos.' };
+  }
+
   const [album] = await db
     .select()
     .from(albums)
@@ -52,20 +67,22 @@ export async function requestAlbumAccess(input: {
 
   const [request] = await db
     .insert(access_requests)
-    .values({
-      albumId: album.id,
-      name: input.name.trim() || null,
-      email: input.email.trim(),
-      phone: input.phone.trim(),
-    })
+    .values({ albumId: album.id, name: name || null, email, phone })
     .returning();
 
   const admins = await db.select({ email: user.email }).from(user);
   if (admins.length > 0) {
+    // Todo dado do convidado é escapado antes de entrar no HTML — o
+    // formulário é público, sem login, então nome/e-mail/telefone são
+    // entrada não confiável até aqui.
+    const safeName = escapeHtml(name || email);
+    const safeEmail = escapeHtml(email);
+    const safePhone = escapeHtml(phone);
+    const safeAlbumName = escapeHtml(album.name);
     const emailResult = await sendEmail({
       to: admins.map((a) => a.email),
-      subject: `Novo pedido de acesso — ${album.name}`,
-      html: `<p>${input.name || input.email} pediu acesso a "${album.name}".</p><p>E-mail: ${input.email}<br/>Telefone: ${input.phone}</p><p><a href="${env.NEXT_PUBLIC_APP_URL}/admin/albums/${album.id}">Ver pedido</a></p>`,
+      subject: `Novo pedido de acesso — ${safeAlbumName}`,
+      html: `<p>${safeName} pediu acesso a "${safeAlbumName}".</p><p>E-mail: ${safeEmail}<br/>Telefone: ${safePhone}</p><p><a href="${env.NEXT_PUBLIC_APP_URL}/admin/albums/${album.id}">Ver pedido</a></p>`,
     });
     if (!emailResult.ok) console.error('organizer notification failed', emailResult.error);
   }
@@ -99,9 +116,10 @@ export async function approveAccessRequest(id: string) {
   if (!album) return { ok: false as const, error: 'Álbum não encontrado.' };
 
   const link = `${env.NEXT_PUBLIC_APP_URL}/e/${album.slug}`;
+  const safeAlbumName = escapeHtml(album.name);
   const emailResult = await sendEmail({
     to: [request.email],
-    subject: `Seu acesso a ${album.name} foi liberado`,
+    subject: `Seu acesso a ${safeAlbumName} foi liberado`,
     html: `<p>Seu pedido foi aprovado. Acesse suas fotos:</p><p><a href="${link}">${link}</a></p>`,
   });
   const phone = toE164BR(request.phone);
