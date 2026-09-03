@@ -3,24 +3,12 @@ import { EventHero } from '@/components/public/event-hero';
 import { SelfieSearch } from '@/components/public/selfie-search';
 import { resolveSurface } from '@/lib/event-theme/surface';
 import { getAccentPreset } from '@/lib/theme/accent-presets';
+import { ALL_FONT_VARIABLES, getFontPreset } from '@/lib/theme/font-presets';
 import { cn } from '@/lib/utils/cn';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Fraunces } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import type { CSSProperties } from 'react';
-
-// Carregada só nesta rota — a marca do PRODUTO (home/admin) usa Anton, mas a
-// página do evento em si mantém a identidade editorial própria (serifada),
-// independente do sistema visual do resto do PhotoMatch. Por isso o
-// --font-display global (Anton) é sobrescrito localmente aqui, só para esta
-// subárvore, em vez de mudar o mapeamento em @theme inline.
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  weight: ['600', '700'],
-  variable: '--font-fraunces',
-  display: 'swap',
-});
 
 // A superfície dia/noite depende do horário no momento do request.
 export const dynamic = 'force-dynamic';
@@ -43,18 +31,19 @@ export default async function PublicAlbumPage({
     : 'Galeria do evento';
   const welcomeMessage = album.welcomeMessage ?? 'Tire uma selfie e encontre suas fotos do evento.';
   const accent = getAccentPreset(album.primaryColor);
+  const font = getFontPreset(album.fontId);
 
   return (
     <div
       className={cn(
-        fraunces.variable,
+        ALL_FONT_VARIABLES,
         surface === 'night' ? 'event-night' : 'event-day',
         'min-h-dvh bg-event-bg font-sans text-event-text antialiased',
       )}
       style={
         {
           '--event-accent': accent.solid,
-          '--font-display': 'var(--font-fraunces)',
+          '--font-display': `var(${font.cssVar})`,
         } as CSSProperties
       }
     >

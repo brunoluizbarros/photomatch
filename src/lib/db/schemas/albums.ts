@@ -21,6 +21,8 @@ export const albums = pgTable('albums', {
   heroImageUrl: text('hero_image_url'),
   logoUrl: text('logo_url'),
   primaryColor: text('primary_color').notNull().default('#c0714a'),
+  // Preset de fonte de exibição (título/eyebrow) — ver src/lib/theme/font-presets.ts.
+  fontId: text('font_id').notNull().default('fraunces'),
   welcomeMessage: text('welcome_message'),
 
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

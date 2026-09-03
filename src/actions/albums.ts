@@ -91,6 +91,7 @@ export async function updateAlbumBranding(
     heroImageUrl: string | null;
     logoUrl: string | null;
     primaryColor: string;
+    fontId: string;
     welcomeMessage: string | null;
   },
 ) {
@@ -101,6 +102,7 @@ export async function updateAlbumBranding(
       heroImageUrl: input.heroImageUrl || null,
       logoUrl: input.logoUrl || null,
       primaryColor: input.primaryColor,
+      fontId: input.fontId,
       welcomeMessage: input.welcomeMessage || null,
     })
     .where(eq(albums.id, albumId));

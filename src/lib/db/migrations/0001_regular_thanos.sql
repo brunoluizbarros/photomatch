@@ -1,0 +1,1 @@
+ALTER TABLE "albums" ADD COLUMN "font_id" text DEFAULT 'fraunces' NOT NULL;
