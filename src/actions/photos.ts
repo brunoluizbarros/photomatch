@@ -47,12 +47,14 @@ export async function confirmPhotoUploaded(photoId: string) {
     .where(eq(photos.id, photoId));
 
   revalidatePath(`/admin/albums/${photo.albumId}`);
+  revalidatePath(`/admin/albums/${photo.albumId}/photos`);
 }
 
 export async function reindexFailedPhotos(albumId: string) {
   await requireAdmin();
   await reindexFailedPhotosInDb(albumId);
   revalidatePath(`/admin/albums/${albumId}`);
+  revalidatePath(`/admin/albums/${albumId}/photos`);
 }
 
 export async function getPhotosByAlbum(albumId: string, limit = 50, offset = 0) {

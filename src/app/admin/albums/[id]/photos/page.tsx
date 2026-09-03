@@ -1,31 +1,13 @@
 import { getAlbum } from '@/actions/albums';
 import { getAlbumPhotosPage } from '@/actions/photos';
-import { Badge } from '@/components/ui/badge';
-import type { photos } from '@/lib/db/schemas';
-import Image from 'next/image';
+import { AlbumDetail } from '@/components/admin/album-detail';
+import { PhotoGalleryGrid } from '@/components/admin/photo-gallery-grid';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 const PAGE_SIZE = 12;
-
-const STATUS_LABEL: Record<(typeof photos.$inferSelect)['status'], string> = {
-  awaiting_upload: 'enviando',
-  pending: 'na fila',
-  processing: 'processando',
-  indexed: 'indexada',
-  failed: 'falhou',
-};
-
-const STATUS_VARIANT: Record<
-  (typeof photos.$inferSelect)['status'],
-  'default' | 'success' | 'warning' | 'destructive'
-> = {
-  awaiting_upload: 'default',
-  pending: 'default',
-  processing: 'warning',
-  indexed: 'success',
-  failed: 'destructive',
-};
 
 export default async function AlbumPhotosPage({
   params,
@@ -46,31 +28,24 @@ export default async function AlbumPhotosPage({
 
   return (
     <div className="space-y-4">
+      <Button asChild variant="outline" size="sm">
+        <Link href={`/admin/albums/${id}`}>
+          <ArrowLeft className="size-4" />
+          Voltar para o álbum
+        </Link>
+      </Button>
+
       <div>
         <h1 className="font-bold text-2xl">Fotos — {album.name}</h1>
         <p className="text-[var(--muted-foreground)] text-sm">{total} foto(s) no total</p>
       </div>
 
+      <AlbumDetail albumId={id} />
+
       {pagePhotos.length === 0 ? (
         <p className="text-[var(--muted-foreground)] text-sm">Nenhuma foto nesta página.</p>
       ) : (
-        <div className="grid grid-cols-4 gap-3">
-          {pagePhotos.map((photo) => (
-            <div key={photo.id} className="space-y-1.5">
-              <div className="relative aspect-square overflow-hidden rounded-md border border-[var(--border)] bg-[var(--muted)]">
-                <Image
-                  src={photo.url}
-                  alt=""
-                  fill
-                  sizes="25vw"
-                  loading="eager"
-                  className="object-cover"
-                />
-              </div>
-              <Badge variant={STATUS_VARIANT[photo.status]}>{STATUS_LABEL[photo.status]}</Badge>
-            </div>
-          ))}
-        </div>
+        <PhotoGalleryGrid photos={pagePhotos} />
       )}
 
       <div className="flex items-center justify-between border-[var(--border)] border-t pt-4">

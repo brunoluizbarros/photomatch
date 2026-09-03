@@ -1,6 +1,5 @@
 import { getAlbum } from '@/actions/albums';
 import { AlbumBrandingForm } from '@/components/admin/album-branding-form';
-import { AlbumDetail } from '@/components/admin/album-detail';
 import { PublishToggle } from '@/components/admin/publish-toggle';
 import { Button } from '@/components/ui/button';
 import { Images, ScanFace } from 'lucide-react';
@@ -39,8 +38,6 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
       </div>
 
       <AlbumBrandingForm album={album} />
-
-      <AlbumDetail albumId={album.id} />
     </div>
   );
 }
