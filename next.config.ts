@@ -20,9 +20,10 @@ const nextConfig: NextConfig = {
     unoptimized: true,
     remotePatterns: [
       {
-        // Presigned URLs do Railway Object Storage, servidas direto do bucket.
+        // Presigned URLs do bucket (Railway Object Storage, backend Tigris) —
+        // servidas direto de storageapi.dev, não de railway.app.
         protocol: 'https',
-        hostname: 'storage.railway.app',
+        hostname: '*.storageapi.dev',
         pathname: '/**',
       },
     ],

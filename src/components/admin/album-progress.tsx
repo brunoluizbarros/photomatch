@@ -55,7 +55,9 @@ export function AlbumProgress({ albumId, refreshKey }: { albumId: string; refres
       </div>
       {progress.unindexedFaceCount > 0 && (
         <p className="text-[var(--muted-foreground)] text-sm">
-          {progress.unindexedFaceCount} rosto(s) detectado(s) mas descartado(s) por baixa qualidade.
+          {progress.unindexedFaceCount === 1
+            ? 'Detectamos 1 rosto que não pôde ser usado na busca por selfie (a imagem estava com qualidade baixa demais para o reconhecimento facial).'
+            : `Detectamos ${progress.unindexedFaceCount} rostos que não puderam ser usados na busca por selfie (a imagem estava com qualidade baixa demais para o reconhecimento facial).`}
         </p>
       )}
       {progress.failed > 0 && (

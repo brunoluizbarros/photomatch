@@ -21,9 +21,14 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
 
       <PublishToggle albumId={album.id} slug={album.slug} initialIsPublished={album.isPublished} />
 
-      <Link href={`/admin/albums/${album.id}/test`} className="text-sm underline">
-        Testar reconhecimento facial
-      </Link>
+      <div className="flex gap-4">
+        <Link href={`/admin/albums/${album.id}/photos`} className="text-sm underline">
+          Ver galeria de fotos
+        </Link>
+        <Link href={`/admin/albums/${album.id}/test`} className="text-sm underline">
+          Testar reconhecimento facial
+        </Link>
+      </div>
 
       <AlbumBrandingForm album={album} />
 

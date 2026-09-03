@@ -4,9 +4,9 @@ import { requireAdmin } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
 import { reindexFailedPhotos as reindexFailedPhotosInDb } from '@/lib/db/queue';
 import { albums, photos } from '@/lib/db/schemas';
-import { getPresignedUploadUrl, headObject } from '@/lib/storage/presign';
+import { getPresignedDownloadUrl, getPresignedUploadUrl, headObject } from '@/lib/storage/presign';
 import { randomFilename } from '@/lib/utils/random-filename';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 export async function requestPhotoUpload(input: {
@@ -64,4 +64,25 @@ export async function getPhotosByAlbum(albumId: string, limit = 50, offset = 0) 
     .orderBy(photos.createdAt)
     .limit(limit)
     .offset(offset);
+}
+
+// Galeria paginada do admin (/admin/albums/[id]/photos) — mostra as fotos
+// já enviadas com URL assinada de download, pra conferência visual.
+export async function getAlbumPhotosPage(albumId: string, page: number, pageSize = 12) {
+  await requireAdmin();
+
+  const offset = (Math.max(1, page) - 1) * pageSize;
+  const [rows, [{ count }]] = await Promise.all([
+    getPhotosByAlbum(albumId, pageSize, offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(photos)
+      .where(eq(photos.albumId, albumId)),
+  ]);
+
+  const withUrls = await Promise.all(
+    rows.map(async (photo) => ({ ...photo, url: await getPresignedDownloadUrl(photo.storageKey) })),
+  );
+
+  return { photos: withUrls, total: count, page, pageSize };
 }
