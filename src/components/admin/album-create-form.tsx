@@ -59,7 +59,7 @@ export function AlbumCreateForm() {
             }}
           />
         </div>
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" variant="accent" disabled={loading}>
           {loading ? 'Criando...' : 'Criar álbum'}
         </Button>
       </form>

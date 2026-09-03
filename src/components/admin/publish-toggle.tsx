@@ -26,7 +26,7 @@ export function PublishToggle({
 
   return (
     <div className="flex items-center gap-3">
-      <Button variant={isPublished ? 'outline' : 'default'} onClick={toggle} disabled={loading}>
+      <Button variant={isPublished ? 'outline' : 'accent'} onClick={toggle} disabled={loading}>
         {isPublished ? 'Despublicar' : 'Publicar página pública'}
       </Button>
       {isPublished && (

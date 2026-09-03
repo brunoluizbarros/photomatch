@@ -17,6 +17,25 @@ export async function listAlbums() {
   return db.select().from(albums).orderBy(albums.createdAt);
 }
 
+// Cards de estatística do painel principal — porta o padrão de dashboard do
+// ticketeria-techstage (contagens agregadas + destaque em número grande).
+export async function getDashboardStats() {
+  await requireAdmin();
+  const [albumStats] = await db
+    .select({
+      total: sql<number>`count(*)::int`,
+      published: sql<number>`count(*) filter (where ${albums.isPublished})::int`,
+    })
+    .from(albums);
+  const [photoStats] = await db
+    .select({
+      total: sql<number>`count(*)::int`,
+      indexed: sql<number>`count(*) filter (where ${photos.status} = 'indexed')::int`,
+    })
+    .from(photos);
+  return { albums: albumStats, photos: photoStats };
+}
+
 export async function getAlbum(id: string) {
   await requireAdmin();
   const [album] = await db.select().from(albums).where(eq(albums.id, id));

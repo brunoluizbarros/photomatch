@@ -9,6 +9,12 @@
   --primary: #18181b;
   --primary-foreground: #fafafa;
   --destructive: #dc2626;
+  /* Acento do admin — portado do design system do ticketeria-techstage
+     (docs/ui-rules.md), trocando o roxo da marca original por azul. */
+  --accent: #2563eb;
+  --accent-dark: #1e40af;
+  --accent-light: #bfdbfe;
+  --accent-foreground: #fafafa;
 
   /* Template editorial da página pública de evento (/e/[slug]), portado do
      design do Réveillon Carneiros. Superfícies neutras fixas — a única cor
@@ -23,6 +29,11 @@
 }
 
 @theme inline {
+  --color-accent: var(--accent);
+  --color-accent-dark: var(--accent-dark);
+  --color-accent-light: var(--accent-light);
+  --color-accent-foreground: var(--accent-foreground);
+  --font-sans: var(--font-inter);
   --color-event-bg: var(--event-bg);
   --color-event-surface: var(--event-surface);
   --color-event-surface-2: var(--event-surface-2);

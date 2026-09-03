@@ -60,11 +60,14 @@ function SignInForm() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
-      <Card className="space-y-4">
-        <h1 className="font-bold text-xl">Entrar</h1>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[var(--primary)] to-black px-4">
+      <p className="mb-6 font-bold text-lg text-white">
+        PhotoMatch <span className="text-[var(--accent-light)]">admin</span>
+      </p>
+      <Card className="w-full max-w-sm space-y-4 rounded-2xl shadow-xl">
+        <h1 className="font-black text-2xl text-[var(--foreground)] tracking-tight">Entrar</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor="email">E-mail</Label>
             <Input
               id="email"
@@ -74,7 +77,7 @@ function SignInForm() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor="password">Senha</Label>
             <Input
               id="password"
@@ -85,7 +88,7 @@ function SignInForm() {
             />
           </div>
           {error && <p className="text-[var(--destructive)] text-sm">{error}</p>}
-          <Button type="submit" disabled={loading} className="w-full">
+          <Button type="submit" variant="accent" disabled={loading} className="w-full">
             {loading ? 'Entrando...' : 'Entrar'}
           </Button>
         </form>
