@@ -16,12 +16,20 @@ export default function SignInPage() {
   );
 }
 
-// Só aceita caminho interno começando com uma única "/" — bloqueia
-// "https://evil.com" e "//evil.com" (protocol-relative), que um atacante
-// poderia colocar em ?callbackUrl= pra usar o login legítimo como trampolim
-// pra um site malicioso (open redirect).
+// Resolve contra o próprio parser de URL do navegador (o mesmo que vai
+// navegar de verdade) em vez de checar prefixo de string — um prefixo
+// manual como startsWith('/') passa para "/\evil.com", que o navegador
+// normaliza pra "//evil.com" (protocol-relative) e navega pra fora do
+// site. Comparar a origin resultante cobre isso e também bloqueia
+// esquemas como "javascript:".
 function safeCallbackUrl(value: string | null): string {
-  if (value?.startsWith('/') && !value.startsWith('//')) return value;
+  if (!value) return '/admin';
+  try {
+    const url = new URL(value, window.location.origin);
+    if (url.origin === window.location.origin) return url.pathname + url.search + url.hash;
+  } catch {
+    // valor não é uma URL válida — cai no fallback
+  }
   return '/admin';
 }
 
