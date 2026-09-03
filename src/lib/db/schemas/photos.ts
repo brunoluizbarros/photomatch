@@ -28,6 +28,11 @@ export const photos = pgTable(
       .notNull()
       .references(() => albums.id, { onDelete: 'cascade' }),
     storageKey: text('storage_key').notNull().unique(),
+    // Origem quando a foto veio de um link público (Drive/Dropbox) em vez do
+    // upload pelo navegador: o worker baixa daqui, grava no bucket e zera o
+    // campo. Sem status novo — a linha já nasce 'pending' e a fila existente
+    // (claimPhotoBatch) pega do mesmo jeito.
+    sourceUrl: text('source_url'),
     width: integer('width'),
     height: integer('height'),
     bytes: integer('bytes'),

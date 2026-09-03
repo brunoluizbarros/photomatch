@@ -1,5 +1,6 @@
 import { getAlbum } from '@/actions/albums';
 import { AlbumBrandingForm } from '@/components/admin/album-branding-form';
+import { AnalyticsPanel } from '@/components/admin/analytics-panel';
 import { PublishToggle } from '@/components/admin/publish-toggle';
 import { QrCodeCard } from '@/components/admin/qr-code-card';
 import { Button } from '@/components/ui/button';
@@ -7,8 +8,18 @@ import { Images, ScanFace } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-export default async function AlbumPage({ params }: { params: Promise<{ id: string }> }) {
+const DEFAULT_WINDOW_DAYS = 30;
+
+export default async function AlbumPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ d?: string }>;
+}) {
   const { id } = await params;
+  const { d } = await searchParams;
+  const days = Number(d) || DEFAULT_WINDOW_DAYS;
   const album = await getAlbum(id);
   if (!album) notFound();
 
@@ -37,6 +48,8 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
           </Link>
         </Button>
       </div>
+
+      <AnalyticsPanel days={days} albumId={album.id} basePath={`/admin/albums/${album.id}`} />
 
       <QrCodeCard slug={album.slug} />
 

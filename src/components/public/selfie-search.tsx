@@ -4,6 +4,7 @@ import { searchPhotosBySelfiePublic } from '@/actions/public-search';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { getDeviceId } from '@/lib/analytics/device-id';
 import { cn } from '@/lib/utils/cn';
 import {
   Camera,
@@ -158,7 +159,7 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
     setError(null);
     try {
       const base64 = await fileToBase64(file);
-      const found = await searchPhotosBySelfiePublic(slug, base64);
+      const found = await searchPhotosBySelfiePublic(slug, base64, getDeviceId());
       setResults(found);
       setStep('results');
     } catch (err) {

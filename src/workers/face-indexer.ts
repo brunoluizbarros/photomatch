@@ -11,11 +11,12 @@ import 'dotenv/config';
 import { env } from '@/config/env';
 import { db } from '@/lib/db/client';
 import { type ClaimedPhoto, claimPhotoBatch, releaseFailure, releaseSuccess } from '@/lib/db/queue';
-import { albums, photo_faces } from '@/lib/db/schemas';
+import { albums, photo_faces, photos } from '@/lib/db/schemas';
 import { resizeToFitByteLimit } from '@/lib/image/resize';
+import { fetchRemoteImage } from '@/lib/import/fetch-remote-image';
 import { deletePhotoFaces, indexPhotoFaces } from '@/lib/rekognition/faces';
 import { bucketName, storage } from '@/lib/storage/client';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import Bottleneck from 'bottleneck';
 import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
@@ -39,9 +40,29 @@ async function downloadPhoto(storageKey: string): Promise<Buffer> {
   return Buffer.from(await object.Body.transformToByteArray());
 }
 
+// Foto importada por link (Drive/Dropbox): baixa da origem e grava no bucket
+// na primeira passada, depois zera sourceUrl — assim um retry (releaseFailure
+// devolve a linha pra 'pending') já lê do bucket em vez de bater na origem de
+// novo.
+async function loadPhotoBytes(photo: ClaimedPhoto): Promise<Buffer> {
+  if (!photo.sourceUrl) return downloadPhoto(photo.storageKey);
+
+  const { body, contentType } = await fetchRemoteImage(photo.sourceUrl);
+  await storage.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: photo.storageKey,
+      Body: body,
+      ContentType: contentType,
+    }),
+  );
+  await db.update(photos).set({ sourceUrl: null }).where(eq(photos.id, photo.id));
+  return body;
+}
+
 async function handlePhoto(photo: ClaimedPhoto, collectionId: string) {
   try {
-    const original = await downloadPhoto(photo.storageKey);
+    const original = await loadPhotoBytes(photo);
     const resized = await resizeToFitByteLimit(original);
 
     // Se é uma reindexação, apaga os FaceIds antigos na AWS antes de indexar

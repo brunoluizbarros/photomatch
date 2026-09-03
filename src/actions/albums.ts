@@ -54,6 +54,16 @@ export async function getPublishedAlbumBySlug(slug: string) {
 export async function createAlbum(input: { name: string; slug: string; eventDate?: string }) {
   await requireAdmin();
 
+  // Checa o slug ANTES de criar a Collection: o insert é a última coisa que
+  // acontece, então um slug repetido deixaria uma Collection órfã na AWS.
+  // Ainda racy sob submits concorrentes — quem garante de verdade é o índice
+  // único do slug; isto só evita o caso comum (admin reenvia um nome já usado).
+  const [taken] = await db
+    .select({ id: albums.id })
+    .from(albums)
+    .where(eq(albums.slug, input.slug));
+  if (taken) throw new Error('Já existe um álbum com esse slug.');
+
   // Cria a Collection na AWS antes do INSERT: se a AWS falhar, não sobra
   // linha órfã no Postgres.
   const id = createId();
@@ -66,7 +76,9 @@ export async function createAlbum(input: { name: string; slug: string; eventDate
       id,
       name: input.name,
       slug: input.slug,
-      eventDate: input.eventDate ? new Date(input.eventDate) : undefined,
+      // T12:00 local: <input type="date"> manda 'YYYY-MM-DD', que new Date()
+      // interpreta como meia-noite UTC — em UTC-3 a data exibida voltaria um dia.
+      eventDate: input.eventDate ? new Date(`${input.eventDate}T12:00:00`) : undefined,
       rekognitionCollectionId: collectionId,
     })
     .returning();

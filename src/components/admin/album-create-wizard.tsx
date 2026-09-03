@@ -1,0 +1,178 @@
+'use client';
+
+import { createAlbum } from '@/actions/albums';
+import { AlbumBrandingForm } from '@/components/admin/album-branding-form';
+import { AlbumDetail } from '@/components/admin/album-detail';
+import { Button } from '@/components/ui/button';
+import { Dialog } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils/cn';
+import { slugify } from '@/lib/utils/slugify';
+import { Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { type FormEvent, useState } from 'react';
+
+type CreatedAlbum = Awaited<ReturnType<typeof createAlbum>>;
+
+const STEP_LABELS = ['Dados', 'Design', 'Fotos'] as const;
+
+function StepIndicator({ step }: { step: number }) {
+  return (
+    <div aria-hidden className="mb-5 flex items-center gap-2">
+      {STEP_LABELS.map((label, i) => (
+        <div key={label} className="flex flex-1 items-center gap-2">
+          <span
+            className={cn(
+              'flex size-6 shrink-0 items-center justify-center rounded-full font-display text-xs',
+              i + 1 <= step
+                ? 'bg-[var(--accent)] text-[var(--accent-foreground)]'
+                : 'bg-[var(--muted)] text-[var(--muted-foreground)]',
+            )}
+          >
+            {i + 1}
+          </span>
+          <span className="text-[var(--muted-foreground)] text-xs uppercase tracking-wide">
+            {label}
+          </span>
+          {i < STEP_LABELS.length - 1 && <span className="h-px flex-1 bg-[var(--border)]" />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Passo 1 do wizard: mesma lógica de nome/slug do form antigo, mais data do
+// evento (createAlbum já aceitava eventDate, mas nada enviava até agora).
+function StepBasics({ onCreated }: { onCreated: (album: CreatedAlbum) => void }) {
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [eventDate, setEventDate] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const album = await createAlbum({ name, slug, eventDate: eventDate || undefined });
+      onCreated(album);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível criar o álbum.');
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-1">
+        <Label htmlFor="wizard-name">Nome do evento</Label>
+        <Input
+          id="wizard-name"
+          required
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            if (!slugTouched) setSlug(slugify(e.target.value));
+          }}
+        />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="wizard-slug">Slug (URL pública)</Label>
+        <Input
+          id="wizard-slug"
+          required
+          value={slug}
+          onChange={(e) => {
+            setSlug(e.target.value);
+            setSlugTouched(true);
+          }}
+        />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="wizard-date">Data do evento (opcional)</Label>
+        <Input
+          id="wizard-date"
+          type="date"
+          value={eventDate}
+          onChange={(e) => setEventDate(e.target.value)}
+        />
+      </div>
+      {error && <p className="text-[var(--destructive)] text-sm">{error}</p>}
+      <Button type="submit" variant="accent" disabled={loading}>
+        {loading ? 'Criando...' : 'Criar e continuar'}
+      </Button>
+    </form>
+  );
+}
+
+export function AlbumCreateWizard() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState(1);
+  const [album, setAlbum] = useState<CreatedAlbum | null>(null);
+
+  function reset() {
+    setStep(1);
+    setAlbum(null);
+  }
+
+  function close() {
+    setOpen(false);
+    router.refresh(); // o álbum criado (mesmo em rascunho) já entra na lista
+    // Espera o fechamento visual antes de limpar o estado do form.
+    setTimeout(reset, 200);
+  }
+
+  function finish() {
+    setOpen(false);
+    if (album) router.push(`/admin/albums/${album.id}`);
+    setTimeout(reset, 200);
+  }
+
+  return (
+    <>
+      <Button variant="accent" onClick={() => setOpen(true)}>
+        <Plus className="size-4" />
+        Novo álbum
+      </Button>
+
+      <Dialog open={open} onClose={close} title="Novo álbum">
+        <StepIndicator step={step} />
+
+        {step === 1 && (
+          <StepBasics
+            onCreated={(created) => {
+              setAlbum(created);
+              setStep(2);
+            }}
+          />
+        )}
+
+        {step === 2 && album && (
+          <div className="space-y-4">
+            <AlbumBrandingForm
+              album={album}
+              submitLabel="Salvar e continuar"
+              onSaved={() => setStep(3)}
+            />
+            <Button variant="ghost" size="sm" onClick={() => setStep(3)}>
+              Pular personalização
+            </Button>
+          </div>
+        )}
+
+        {step === 3 && album && (
+          <div className="space-y-4">
+            <AlbumDetail albumId={album.id} />
+            <Button variant="accent" onClick={finish}>
+              Concluir
+            </Button>
+          </div>
+        )}
+      </Dialog>
+    </>
+  );
+}

@@ -1,6 +1,7 @@
 import { getPublishedAlbumBySlug } from '@/actions/albums';
 import { EventHero } from '@/components/public/event-hero';
 import { SelfieSearch } from '@/components/public/selfie-search';
+import { VisitTracker } from '@/components/public/visit-tracker';
 import { resolveSurface } from '@/lib/event-theme/surface';
 import { getAccentPreset } from '@/lib/theme/accent-presets';
 import { getBodyPreset } from '@/lib/theme/body-presets';
@@ -53,6 +54,7 @@ export default async function PublicAlbumPage({
         } as CSSProperties
       }
     >
+      <VisitTracker slug={album.slug} />
       <EventHero
         title={album.name}
         eyebrow={eyebrow}

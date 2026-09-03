@@ -4,10 +4,13 @@ import { requireAdmin } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
 import { reindexFailedPhotos as reindexFailedPhotosInDb } from '@/lib/db/queue';
 import { albums, photos } from '@/lib/db/schemas';
+import { resolveShareLink } from '@/lib/import/share-link';
 import { getPresignedDownloadUrl, getPresignedUploadUrl, headObject } from '@/lib/storage/presign';
 import { randomFilename } from '@/lib/utils/random-filename';
 import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+
+const MAX_IMPORT = 1000;
 
 export async function requestPhotoUpload(input: {
   albumId: string;
@@ -48,6 +51,33 @@ export async function confirmPhotoUploaded(photoId: string) {
 
   revalidatePath(`/admin/albums/${photo.albumId}`);
   revalidatePath(`/admin/albums/${photo.albumId}/photos`);
+}
+
+// Importa fotos de um link público (Google Drive ou Dropbox) — só resolve o
+// link (1 request HTTP, sem baixar as imagens) e enfileira: baixar centenas
+// de fotos aqui dentro estouraria o timeout da Server Action. O worker
+// (pnpm worker:face-indexer) baixa cada uma via `photos.sourceUrl`.
+export async function importFromShareLink(input: { albumId: string; url: string }) {
+  await requireAdmin();
+
+  const [album] = await db.select().from(albums).where(eq(albums.id, input.albumId));
+  if (!album) throw new Error('Album not found');
+
+  const images = await resolveShareLink(input.url);
+  if (images.length > MAX_IMPORT) throw new Error(`Limite de ${MAX_IMPORT} fotos por importação.`);
+
+  await db.insert(photos).values(
+    images.map((img) => ({
+      albumId: album.id,
+      storageKey: `albums/${album.id}/${randomFilename(img.filename)}`,
+      sourceUrl: img.url,
+      status: 'pending' as const,
+    })),
+  );
+
+  revalidatePath(`/admin/albums/${album.id}`);
+  revalidatePath(`/admin/albums/${album.id}/photos`);
+  return { count: images.length };
 }
 
 export async function reindexFailedPhotos(albumId: string) {

@@ -114,7 +114,15 @@ type Album = {
   welcomeMessage: string | null;
 };
 
-export function AlbumBrandingForm({ album }: { album: Album }) {
+export function AlbumBrandingForm({
+  album,
+  submitLabel = 'Salvar personalização',
+  onSaved,
+}: {
+  album: Album;
+  submitLabel?: string;
+  onSaved?: () => void;
+}) {
   const router = useRouter();
   const [heroImageUrl, setHeroImageUrl] = useState(album.heroImageUrl ?? '');
   const [logoUrl, setLogoUrl] = useState(album.logoUrl ?? '');
@@ -140,6 +148,7 @@ export function AlbumBrandingForm({ album }: { album: Album }) {
     setSaving(false);
     setSaved(true);
     router.refresh();
+    onSaved?.();
   }
 
   return (
@@ -199,7 +208,7 @@ export function AlbumBrandingForm({ album }: { album: Album }) {
         </div>
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={saving}>
-            {saving ? 'Salvando...' : 'Salvar personalização'}
+            {saving ? 'Salvando...' : submitLabel}
           </Button>
           {saved && <span className="text-[var(--muted-foreground)] text-sm">Salvo.</span>}
         </div>
