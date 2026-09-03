@@ -3,7 +3,7 @@
 import { setPublished } from '@/actions/albums';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export function PublishToggle({
   albumId,
@@ -13,8 +13,14 @@ export function PublishToggle({
   const router = useRouter();
   const [isPublished, setIsPublished] = useState(initialIsPublished);
   const [loading, setLoading] = useState(false);
-  const publicUrl =
-    typeof window !== 'undefined' ? `${window.location.origin}/e/${slug}` : `/e/${slug}`;
+  // Começa relativo (bate com o SSR) e só vira absoluto depois de montar no
+  // client — ler window.location durante a renderização causa mismatch de
+  // hidratação (React #418), já que o servidor nunca tem "window".
+  const [publicUrl, setPublicUrl] = useState(`/e/${slug}`);
+
+  useEffect(() => {
+    setPublicUrl(`${window.location.origin}/e/${slug}`);
+  }, [slug]);
 
   async function toggle() {
     setLoading(true);
