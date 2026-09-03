@@ -8,11 +8,13 @@ export function EventHero({
   eyebrow,
   heroImageUrl,
   logoUrl,
+  fallbackGradient,
 }: {
   title: string;
   eyebrow: string;
   heroImageUrl: string | null;
   logoUrl: string | null;
+  fallbackGradient: string;
 }) {
   return (
     <section className="relative isolate h-[52svh] max-h-[520px] min-h-[340px] w-full overflow-hidden bg-[#1b1f0f] sm:h-[60svh] sm:max-h-[620px]">
@@ -25,13 +27,7 @@ export function EventHero({
           className="event-kenburns absolute inset-0 h-full w-full object-cover"
         />
       ) : (
-        <div
-          className="event-kenburns absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(160deg, var(--event-accent) 0%, var(--event-olive-deep) 100%)',
-          }}
-        />
+        <div className="event-kenburns absolute inset-0" style={{ background: fallbackGradient }} />
       )}
 
       {/* scrim topo — legibilidade do logo */}

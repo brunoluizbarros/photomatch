@@ -1,6 +1,7 @@
 import { getAlbum } from '@/actions/albums';
 import { AlbumBrandingForm } from '@/components/admin/album-branding-form';
 import { PublishToggle } from '@/components/admin/publish-toggle';
+import { QrCodeCard } from '@/components/admin/qr-code-card';
 import { Button } from '@/components/ui/button';
 import { Images, ScanFace } from 'lucide-react';
 import Link from 'next/link';
@@ -36,6 +37,8 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
           </Link>
         </Button>
       </div>
+
+      <QrCodeCard slug={album.slug} />
 
       <AlbumBrandingForm album={album} />
     </div>

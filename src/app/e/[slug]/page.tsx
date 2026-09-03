@@ -2,6 +2,7 @@ import { getPublishedAlbumBySlug } from '@/actions/albums';
 import { EventHero } from '@/components/public/event-hero';
 import { SelfieSearch } from '@/components/public/selfie-search';
 import { resolveSurface } from '@/lib/event-theme/surface';
+import { getAccentPreset } from '@/lib/theme/accent-presets';
 import { cn } from '@/lib/utils/cn';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -38,6 +39,7 @@ export default async function PublicAlbumPage({
     ? format(album.eventDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
     : 'Galeria do evento';
   const welcomeMessage = album.welcomeMessage ?? 'Tire uma selfie e encontre suas fotos do evento.';
+  const accent = getAccentPreset(album.primaryColor);
 
   return (
     <div
@@ -46,13 +48,14 @@ export default async function PublicAlbumPage({
         surface === 'night' ? 'event-night' : 'event-day',
         'min-h-dvh bg-event-bg font-sans text-event-text antialiased',
       )}
-      style={{ '--event-accent': album.primaryColor } as CSSProperties}
+      style={{ '--event-accent': accent.solid } as CSSProperties}
     >
       <EventHero
         title={album.name}
         eyebrow={eyebrow}
         heroImageUrl={album.heroImageUrl}
         logoUrl={album.logoUrl}
+        fallbackGradient={accent.gradient}
       />
       <main className="relative z-10 mx-auto -mt-14 w-full max-w-[620px] px-5 pb-24 sm:-mt-16 sm:px-6">
         {/* bloom do accent atrás do card — profundidade sem imagem extra */}

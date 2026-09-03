@@ -5,8 +5,45 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ACCENT_PRESETS, getAccentPreset } from '@/lib/theme/accent-presets';
+import { cn } from '@/lib/utils/cn';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
+
+// Coleção fixa de degradês (bkcuradoria/GradientPicker) — o admin escolhe um
+// preset, nunca digita hex ou CSS de gradiente na mão.
+function AccentPresetPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const selected = getAccentPreset(value).id;
+  return (
+    <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+      {ACCENT_PRESETS.map((preset) => (
+        <button
+          key={preset.id}
+          type="button"
+          onClick={() => onChange(preset.id)}
+          title={preset.label}
+          className={cn(
+            'overflow-hidden rounded-xl border-2 transition-all',
+            selected === preset.id
+              ? 'scale-[1.06] border-[var(--foreground)] shadow'
+              : 'border-transparent hover:border-[var(--border)]',
+          )}
+        >
+          <div className="h-10 w-full" style={{ background: preset.gradient }} />
+          <p className="truncate bg-[var(--muted)] px-1 py-1 text-center text-[10px] text-[var(--muted-foreground)] leading-tight">
+            {preset.label}
+          </p>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 type Album = {
   id: string;
@@ -20,7 +57,7 @@ export function AlbumBrandingForm({ album }: { album: Album }) {
   const router = useRouter();
   const [heroImageUrl, setHeroImageUrl] = useState(album.heroImageUrl ?? '');
   const [logoUrl, setLogoUrl] = useState(album.logoUrl ?? '');
-  const [primaryColor, setPrimaryColor] = useState(album.primaryColor);
+  const [primaryColor, setPrimaryColor] = useState(getAccentPreset(album.primaryColor).id);
   const [welcomeMessage, setWelcomeMessage] = useState(album.welcomeMessage ?? '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -75,21 +112,8 @@ export function AlbumBrandingForm({ album }: { album: Album }) {
           />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="primaryColor">Cor de destaque</Label>
-          <div className="flex items-center gap-2">
-            <input
-              id="primaryColor"
-              type="color"
-              value={primaryColor}
-              onChange={(e) => setPrimaryColor(e.target.value)}
-              className="h-10 w-14 rounded border border-[var(--border)]"
-            />
-            <Input
-              value={primaryColor}
-              onChange={(e) => setPrimaryColor(e.target.value)}
-              className="max-w-32"
-            />
-          </div>
+          <Label>Cor de destaque</Label>
+          <AccentPresetPicker value={primaryColor} onChange={setPrimaryColor} />
         </div>
         <div className="space-y-1">
           <Label htmlFor="welcomeMessage">Texto de boas-vindas</Label>
