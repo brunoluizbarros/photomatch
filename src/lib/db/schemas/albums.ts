@@ -17,9 +17,17 @@ export const albums = pgTable('albums', {
 
   // Customização visual da página pública /e/[slug] — template "editorial"
   // portado do design do Réveillon Carneiros (hero full-bleed + tipografia
-  // serifada + superfícies dia/noite), com estes 4 campos por evento.
+  // serifada + superfícies dia/noite), com estes campos por evento.
+  //
+  // heroImageUrl/logoUrl são o formato legado (URL externa colada à mão —
+  // ex. um arquivo em public/images/, ou um CDN de terceiro). heroImageKey/
+  // logoImageKey são a chave no bucket privado (upload feito pelo admin);
+  // quando setadas, têm prioridade — resolvidas por presigned URL fresca a
+  // cada request, nunca guardadas prontas (URL assinada expira em 1h).
   heroImageUrl: text('hero_image_url'),
   logoUrl: text('logo_url'),
+  heroImageKey: text('hero_image_key'),
+  logoImageKey: text('logo_image_key'),
   primaryColor: text('primary_color').notNull().default('#c0714a'),
   // Preset de fonte de exibição (título/eyebrow) — ver src/lib/theme/font-presets.ts.
   fontId: text('font_id').notNull().default('fraunces'),

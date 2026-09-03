@@ -105,8 +105,8 @@ export async function setPublished(albumId: string, isPublished: boolean) {
 export async function updateAlbumBranding(
   albumId: string,
   input: {
-    heroImageUrl: string | null;
-    logoUrl: string | null;
+    heroImageKey: string | null;
+    logoImageKey: string | null;
     primaryColor: string;
     fontId: string;
     bodyColor: string;
@@ -117,8 +117,8 @@ export async function updateAlbumBranding(
   await db
     .update(albums)
     .set({
-      heroImageUrl: input.heroImageUrl || null,
-      logoUrl: input.logoUrl || null,
+      heroImageKey: input.heroImageKey,
+      logoImageKey: input.logoImageKey,
       primaryColor: input.primaryColor,
       fontId: input.fontId,
       bodyColor: input.bodyColor,

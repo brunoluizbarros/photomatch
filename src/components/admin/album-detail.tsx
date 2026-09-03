@@ -1,8 +1,7 @@
 'use client';
 
+import { AddPhotosPanel } from '@/components/admin/add-photos-panel';
 import { AlbumProgress } from '@/components/admin/album-progress';
-import { BulkUploader } from '@/components/admin/bulk-uploader';
-import { ImportFromLink } from '@/components/admin/import-from-link';
 import { useState } from 'react';
 
 export function AlbumDetail({ albumId }: { albumId: string }) {
@@ -10,8 +9,7 @@ export function AlbumDetail({ albumId }: { albumId: string }) {
 
   return (
     <div className="space-y-6">
-      <BulkUploader albumId={albumId} onDone={() => setRefreshKey((k) => k + 1)} />
-      <ImportFromLink albumId={albumId} onDone={() => setRefreshKey((k) => k + 1)} />
+      <AddPhotosPanel albumId={albumId} onDone={() => setRefreshKey((k) => k + 1)} />
       <AlbumProgress albumId={albumId} refreshKey={refreshKey} />
     </div>
   );

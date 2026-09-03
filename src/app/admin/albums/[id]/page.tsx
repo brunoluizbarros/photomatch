@@ -4,6 +4,7 @@ import { AnalyticsPanel } from '@/components/admin/analytics-panel';
 import { PublishToggle } from '@/components/admin/publish-toggle';
 import { QrCodeCard } from '@/components/admin/qr-code-card';
 import { Button } from '@/components/ui/button';
+import { resolveBrandingImageUrl } from '@/lib/branding-image';
 import { Images, ScanFace } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -22,6 +23,11 @@ export default async function AlbumPage({
   const days = Number(d) || DEFAULT_WINDOW_DAYS;
   const album = await getAlbum(id);
   if (!album) notFound();
+
+  const [heroPreviewUrl, logoPreviewUrl] = await Promise.all([
+    resolveBrandingImageUrl(album.heroImageKey, album.heroImageUrl),
+    resolveBrandingImageUrl(album.logoImageKey, album.logoUrl),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -53,7 +59,11 @@ export default async function AlbumPage({
 
       <QrCodeCard slug={album.slug} />
 
-      <AlbumBrandingForm album={album} />
+      <AlbumBrandingForm
+        album={album}
+        heroPreviewUrl={heroPreviewUrl}
+        logoPreviewUrl={logoPreviewUrl}
+      />
     </div>
   );
 }

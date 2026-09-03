@@ -2,7 +2,6 @@
 
 import { confirmPhotoUploaded, requestPhotoUpload } from '@/actions/photos';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useEffect, useRef, useState } from 'react';
 
@@ -89,8 +88,7 @@ export function BulkUploader({ albumId, onDone }: { albumId: string; onDone: () 
   }
 
   return (
-    <Card className="space-y-3">
-      <h2 className="font-display uppercase">Enviar fotos</h2>
+    <div className="space-y-3">
       <input
         ref={inputRef}
         type="file"
@@ -133,6 +131,6 @@ export function BulkUploader({ albumId, onDone }: { albumId: string; onDone: () 
           </Button>
         </div>
       )}
-    </Card>
+    </div>
   );
 }

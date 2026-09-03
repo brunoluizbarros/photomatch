@@ -156,6 +156,8 @@ export function AlbumCreateWizard() {
           <div className="space-y-4">
             <AlbumBrandingForm
               album={album}
+              heroPreviewUrl={null}
+              logoPreviewUrl={null}
               submitLabel="Salvar e continuar"
               onSaved={() => setStep(3)}
             />

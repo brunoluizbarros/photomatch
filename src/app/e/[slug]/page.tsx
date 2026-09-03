@@ -2,6 +2,7 @@ import { getPublishedAlbumBySlug } from '@/actions/albums';
 import { EventHero } from '@/components/public/event-hero';
 import { SelfieSearch } from '@/components/public/selfie-search';
 import { VisitTracker } from '@/components/public/visit-tracker';
+import { resolveBrandingImageUrl } from '@/lib/branding-image';
 import { resolveSurface } from '@/lib/event-theme/surface';
 import { getAccentPreset } from '@/lib/theme/accent-presets';
 import { getBodyPreset } from '@/lib/theme/body-presets';
@@ -38,6 +39,10 @@ export default async function PublicAlbumPage({
   // certa pra esse fundo, em vez de trocar sozinha por horário — um preset
   // escuro custom com o texto do modo dia (tinta) ficaria ilegível.
   const surface = body.background ? body.mode : resolveSurface(theme);
+  const [heroImageUrl, logoUrl] = await Promise.all([
+    resolveBrandingImageUrl(album.heroImageKey, album.heroImageUrl),
+    resolveBrandingImageUrl(album.logoImageKey, album.logoUrl),
+  ]);
 
   return (
     <div
@@ -58,8 +63,8 @@ export default async function PublicAlbumPage({
       <EventHero
         title={album.name}
         eyebrow={eyebrow}
-        heroImageUrl={album.heroImageUrl}
-        logoUrl={album.logoUrl}
+        heroImageUrl={heroImageUrl}
+        logoUrl={logoUrl}
         fallbackGradient={accent.gradient}
       />
       <main className="relative z-10 mx-auto -mt-10 w-full max-w-[620px] px-5 pb-24 sm:-mt-12 sm:px-6">

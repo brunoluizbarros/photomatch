@@ -1,6 +1,7 @@
 'use client';
 
 import { updateAlbumBranding } from '@/actions/albums';
+import { ImageUploadField } from '@/components/admin/image-upload-field';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -106,8 +107,8 @@ function BodyPresetPicker({ value, onChange }: { value: string; onChange: (id: s
 
 type Album = {
   id: string;
-  heroImageUrl: string | null;
-  logoUrl: string | null;
+  heroImageKey: string | null;
+  logoImageKey: string | null;
   primaryColor: string;
   fontId: string;
   bodyColor: string;
@@ -116,16 +117,20 @@ type Album = {
 
 export function AlbumBrandingForm({
   album,
+  heroPreviewUrl,
+  logoPreviewUrl,
   submitLabel = 'Salvar personalização',
   onSaved,
 }: {
   album: Album;
+  heroPreviewUrl: string | null;
+  logoPreviewUrl: string | null;
   submitLabel?: string;
   onSaved?: () => void;
 }) {
   const router = useRouter();
-  const [heroImageUrl, setHeroImageUrl] = useState(album.heroImageUrl ?? '');
-  const [logoUrl, setLogoUrl] = useState(album.logoUrl ?? '');
+  const [heroImageKey, setHeroImageKey] = useState(album.heroImageKey);
+  const [logoImageKey, setLogoImageKey] = useState(album.logoImageKey);
   const [primaryColor, setPrimaryColor] = useState(getAccentPreset(album.primaryColor).id);
   const [fontId, setFontId] = useState(getFontPreset(album.fontId).id);
   const [bodyColor, setBodyColor] = useState(getBodyPreset(album.bodyColor).id);
@@ -138,8 +143,8 @@ export function AlbumBrandingForm({
     setSaving(true);
     setSaved(false);
     await updateAlbumBranding(album.id, {
-      heroImageUrl: heroImageUrl.trim() || null,
-      logoUrl: logoUrl.trim() || null,
+      heroImageKey,
+      logoImageKey,
       primaryColor,
       fontId,
       bodyColor,
@@ -163,28 +168,33 @@ export function AlbumBrandingForm({
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1">
-          <Label htmlFor="heroImageUrl">Foto de capa (URL)</Label>
+          <Label htmlFor="welcomeMessage">Texto de boas-vindas</Label>
           <Input
-            id="heroImageUrl"
-            type="url"
-            placeholder="https://..."
-            value={heroImageUrl}
-            onChange={(e) => setHeroImageUrl(e.target.value)}
-          />
-          <p className="text-[var(--muted-foreground)] text-xs">
-            Sem foto, a capa usa um gradiente com a cor de destaque.
-          </p>
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="logoUrl">Logo (URL)</Label>
-          <Input
-            id="logoUrl"
-            type="url"
-            placeholder="https://..."
-            value={logoUrl}
-            onChange={(e) => setLogoUrl(e.target.value)}
+            id="welcomeMessage"
+            placeholder="Tire uma selfie e encontre suas fotos do evento."
+            value={welcomeMessage}
+            onChange={(e) => setWelcomeMessage(e.target.value)}
           />
         </div>
+        <ImageUploadField
+          label="Foto de capa"
+          hint="Sem foto, a capa usa um gradiente com a cor de destaque."
+          albumId={album.id}
+          kind="hero"
+          aspect="wide"
+          initialPreviewUrl={heroPreviewUrl}
+          value={heroImageKey}
+          onChange={setHeroImageKey}
+        />
+        <ImageUploadField
+          label="Logo"
+          albumId={album.id}
+          kind="logo"
+          aspect="square"
+          initialPreviewUrl={logoPreviewUrl}
+          value={logoImageKey}
+          onChange={setLogoImageKey}
+        />
         <div className="space-y-1">
           <Label>Cor de destaque</Label>
           <AccentPresetPicker value={primaryColor} onChange={setPrimaryColor} />
@@ -196,15 +206,6 @@ export function AlbumBrandingForm({
         <div className="space-y-1">
           <Label>Cor do corpo (fundo abaixo da capa)</Label>
           <BodyPresetPicker value={bodyColor} onChange={setBodyColor} />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="welcomeMessage">Texto de boas-vindas</Label>
-          <Input
-            id="welcomeMessage"
-            placeholder="Tire uma selfie e encontre suas fotos do evento."
-            value={welcomeMessage}
-            onChange={(e) => setWelcomeMessage(e.target.value)}
-          />
         </div>
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={saving}>

@@ -6,6 +6,11 @@ export type ShareProvider = 'drive' | 'dropbox';
 const DRIVE_HOSTS = new Set(['drive.google.com', 'docs.google.com']);
 const DROPBOX_HOSTS = new Set(['dropbox.com', 'www.dropbox.com']);
 
+export const PROVIDER_LABELS: Record<ShareProvider, string> = {
+  drive: 'Google Drive',
+  dropbox: 'Dropbox',
+};
+
 // Detecta o provedor pelo host do link — única fonte de verdade, usada tanto
 // aqui quanto na validação client-side do seletor Drive/Dropbox no admin.
 export function detectShareProvider(rawUrl: string): ShareProvider | null {
