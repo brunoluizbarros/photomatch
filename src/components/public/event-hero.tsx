@@ -37,6 +37,22 @@ export function EventHero({
       {/* scrim base em 3 paradas — o card do fluxo de busca sobrepõe esta borda (ver page.tsx) */}
       <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_40%,rgba(12,10,6,0.55)_74%,rgba(12,10,6,0.88)_100%)]" />
 
+      {/* Marcas de cruz nos cantos — motivo técnico/grid recorrente na
+          referência (site de corrida). Só decorativas, somem em telas
+          estreitas pra não poluir o hero menor do mobile. */}
+      <span
+        aria-hidden
+        className="hidden select-none sm:absolute sm:top-5 sm:right-5 sm:block sm:font-display sm:text-event-cream/40 sm:text-lg"
+      >
+        +
+      </span>
+      <span
+        aria-hidden
+        className="hidden select-none sm:absolute sm:bottom-5 sm:left-5 sm:block sm:font-display sm:text-event-cream/40 sm:text-lg"
+      >
+        +
+      </span>
+
       {logoUrl && (
         <img
           src={logoUrl}
@@ -46,11 +62,16 @@ export function EventHero({
       )}
 
       <div className="absolute right-[22px] bottom-20 left-[22px] sm:right-8 sm:bottom-28 sm:left-8">
-        <div className="event-rise mb-4 h-px w-10 bg-event-accent [animation-delay:80ms]" />
-        <p className="event-rise mb-2.5 font-semibold text-[10.5px] text-event-cream/80 uppercase tracking-[0.24em] [animation-delay:140ms]">
+        <span
+          aria-hidden
+          className="event-rise mb-2 block font-display text-[22px] text-event-accent leading-none [animation-delay:80ms]"
+        >
+          *
+        </span>
+        <p className="event-rise mb-2.5 font-bold text-[10.5px] text-event-cream/80 uppercase tracking-[0.24em] [animation-delay:140ms]">
           {eyebrow}
         </p>
-        <h1 className="event-rise max-w-[16ch] text-balance font-display font-semibold text-[clamp(34px,8.5vw,62px)] text-event-cream leading-[0.94] tracking-[-0.02em] [animation-delay:200ms] [text-shadow:0_2px_28px_rgba(12,10,6,0.45)]">
+        <h1 className="event-rise max-w-[16ch] text-balance font-display text-[clamp(34px,8.5vw,62px)] text-event-cream uppercase leading-[0.94] tracking-[-0.01em] [animation-delay:200ms] [text-shadow:0_2px_28px_rgba(12,10,6,0.45)]">
           {title}
         </h1>
       </div>

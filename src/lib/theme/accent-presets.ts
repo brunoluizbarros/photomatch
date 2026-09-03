@@ -95,6 +95,12 @@ export const ACCENT_PRESETS: AccentPreset[] = [
     solid: '#db2777',
     gradient: 'linear-gradient(140deg, #ec4899 0%, #831843 100%)',
   },
+  {
+    id: 'laranja-queimado',
+    label: 'Laranja queimado',
+    solid: '#e8491d',
+    gradient: 'linear-gradient(140deg, #ff6b35 0%, #c23616 100%)',
+  },
 ];
 
 const DEFAULT_PRESET = ACCENT_PRESETS[0];

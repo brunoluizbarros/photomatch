@@ -43,7 +43,7 @@
   --color-event-line: var(--event-line);
   --color-event-accent: var(--event-accent);
   --color-event-cream: var(--event-cream);
-  --font-display: var(--font-fraunces);
+  --font-display: var(--font-anton);
 }
 
 .event-day {
@@ -140,6 +140,32 @@ body {
   .event-kenburns,
   .event-rise,
   .event-stagger > * {
+    animation: none !important;
+  }
+}
+
+/* Faixa de ticker (texto repetido rolando) acima do hero — motivo do site de
+   corrida usado como referência. Conteúdo duplicado 2x lado a lado no
+   componente; a animação anda -50%, então as duas metades idênticas fazem o
+   loop parecer contínuo, sem salto. */
+@keyframes event-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.event-ticker-track {
+  animation-name: event-ticker-scroll;
+  animation-duration: 22s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-ticker-track {
     animation: none !important;
   }
 }

@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils/cn';
 import {
+  ArrowRight,
   Camera,
   ChevronLeft,
   ChevronRight,
@@ -31,11 +32,25 @@ const SKELETON_TILES = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5', 'sk-6'];
 // className em cima do Button/Checkbox/Label compartilhados (que o painel
 // /admin usa sem essa skin), como no port original do app-carneiros.
 const EVENT_BUTTON =
-  'h-12 w-full rounded-full bg-event-accent text-[15px] text-event-cream shadow-[0_12px_32px_-14px_rgba(20,16,10,0.55)] transition-[opacity,transform] hover:opacity-90 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-event-accent focus-visible:ring-offset-2 focus-visible:ring-offset-event-surface';
+  'h-12 w-full rounded-full bg-event-accent text-[13px] uppercase tracking-wide font-bold text-event-cream shadow-[0_12px_32px_-14px_rgba(20,16,10,0.55)] transition-[opacity,transform] hover:opacity-90 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-event-accent focus-visible:ring-offset-2 focus-visible:ring-offset-event-surface';
 const EVENT_BUTTON_OUTLINE =
-  'h-12 w-full rounded-full border-event-accent bg-transparent text-[15px] text-event-accent shadow-none transition-colors hover:bg-event-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-event-accent focus-visible:ring-offset-2 focus-visible:ring-offset-event-surface';
+  'h-12 w-full rounded-full border-event-accent bg-transparent text-[13px] uppercase tracking-wide font-bold text-event-accent shadow-none transition-colors hover:bg-event-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-event-accent focus-visible:ring-offset-2 focus-visible:ring-offset-event-surface';
+// Cantos retos + sombra dura (offset sólido, sem blur) no lugar do card
+// suave anterior — motivo brutalista da referência (site de corrida).
+// border-event-text (não --event-ink direto) porque já troca sozinho entre
+// ink escuro no dia e cream claro à noite via .event-day/.event-night.
 const EVENT_PANEL =
-  'rounded-[14px] border border-event-line bg-event-surface p-6 shadow-[0_24px_60px_-32px_rgba(20,16,10,0.55)] sm:p-7';
+  'rounded-[4px] border-2 border-event-text bg-event-surface p-6 shadow-[4px_4px_0_0_var(--event-text)] sm:p-7';
+
+// Selo com seta — motivo repetido nas referências (botão "RESERVE SPOT →" e
+// os círculos de seta laranja do site de corrida) nos CTAs principais.
+function ArrowBadge() {
+  return (
+    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-event-cream/20">
+      <ArrowRight className="size-3.5" />
+    </span>
+  );
+}
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -46,21 +61,29 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-// Indicador de passo — porta do padrão dots/dotActive do AgoraScreen
-// (mobile-carneiros). Fica fora do wrapper com key= de propósito: transiciona
-// entre estados em vez de remontar junto com o conteúdo.
+// Indicador de passo — stepper numérico (01 — 02 — 03) no lugar dos pontinhos
+// soft, no espírito das linhas finas de grid da referência. Fica fora do
+// wrapper com key= de propósito: transiciona entre estados em vez de
+// remontar junto com o conteúdo.
 function StepDots({ step }: { step: Step }) {
   const active = STEPS.indexOf(step);
   return (
-    <div aria-hidden className="mb-5 flex items-center justify-center gap-1.5">
+    <div
+      aria-hidden
+      className="mb-5 flex items-center justify-center gap-2 font-display text-[13px]"
+    >
       {STEPS.map((s, i) => (
-        <span
-          key={s}
-          className={cn(
-            'h-[5px] rounded-full transition-all duration-500',
-            i === active ? 'w-5 bg-event-accent' : 'w-[5px] bg-event-text-mute/50',
-          )}
-        />
+        <div key={s} className="flex items-center gap-2">
+          {i > 0 && <span className="h-px w-4 bg-event-text-mute/40" />}
+          <span
+            className={cn(
+              'transition-colors duration-500',
+              i === active ? 'text-event-accent' : 'text-event-text-mute',
+            )}
+          >
+            {String(i + 1).padStart(2, '0')}
+          </span>
+        </div>
       ))}
     </div>
   );
@@ -186,7 +209,7 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
               <ShieldCheck className="size-4" strokeWidth={1.75} />
               <span>Privacidade</span>
             </div>
-            <h2 className="mt-3 font-display font-semibold text-[26px] text-event-text leading-[1.05] tracking-[-0.01em]">
+            <h2 className="mt-3 font-display text-[26px] text-event-text uppercase leading-[1.05] tracking-[-0.01em]">
               Encontre suas fotos
             </h2>
             <p className="mt-2 text-[15px] text-event-text-soft leading-relaxed">
@@ -210,6 +233,7 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
               onClick={() => setStep('capture')}
             >
               Continuar
+              <ArrowBadge />
             </Button>
           </div>
         )}
@@ -228,7 +252,7 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
               <div className="mt-0 mx-auto grid size-14 place-items-center rounded-full border border-event-accent/30 bg-event-accent/10 text-event-accent">
                 <Camera className="size-6" strokeWidth={1.5} />
               </div>
-              <h2 className="mt-4 font-display font-semibold text-[26px] text-event-text leading-[1.05] tracking-[-0.01em]">
+              <h2 className="mt-4 font-display text-[26px] text-event-text uppercase leading-[1.05] tracking-[-0.01em]">
                 Hora da selfie
               </h2>
               <p className="mt-2 text-[14px] text-event-text-soft">
@@ -240,6 +264,7 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
               >
                 <Camera className="size-4" />
                 Tirar selfie e buscar fotos
+                <ArrowBadge />
               </Button>
               {error && (
                 <p className="mt-4 rounded-[8px] border border-[var(--destructive)]/25 bg-[var(--destructive)]/10 px-3 py-2 text-[var(--destructive)] text-sm">
@@ -255,7 +280,7 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
             <div className="mt-0 mx-auto grid size-14 place-items-center rounded-full border border-event-accent/30 bg-event-accent/10 text-event-accent">
               <Loader2 className="size-6 animate-spin" strokeWidth={1.5} />
             </div>
-            <p className="mt-4 font-display font-semibold text-[22px] text-event-text">
+            <p className="mt-4 font-display text-[22px] text-event-text uppercase">
               Procurando você nas fotos…
             </p>
             <p className="mt-1.5 text-[13px] text-event-text-mute">Isso leva alguns segundos.</p>
@@ -274,7 +299,7 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
         {view === 'results' && (
           <div className="space-y-6">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-              <h2 className="font-display font-semibold text-[24px] text-event-text">
+              <h2 className="font-display text-[24px] text-event-text uppercase">
                 {results.length === 0
                   ? 'Nada ainda'
                   : `${results.length} ${results.length === 1 ? 'foto encontrada' : 'fotos encontradas'}`}
@@ -307,7 +332,7 @@ export function SelfieSearch({ slug, welcomeMessage }: { slug: string; welcomeMe
                     key={photo.id}
                     type="button"
                     onClick={() => setSelectedIndex(i)}
-                    className="event-rise group relative block overflow-hidden rounded-[10px] bg-event-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-event-accent"
+                    className="event-rise group relative block overflow-hidden rounded-[10px] border border-event-line bg-event-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-event-accent"
                     style={{ animationDelay: `${Math.min(i, 14) * 45}ms` }}
                   >
                     <Image
