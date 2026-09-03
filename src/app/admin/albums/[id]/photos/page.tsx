@@ -58,7 +58,14 @@ export default async function AlbumPhotosPage({
           {pagePhotos.map((photo) => (
             <div key={photo.id} className="space-y-1.5">
               <div className="relative aspect-square overflow-hidden rounded-md border border-[var(--border)] bg-[var(--muted)]">
-                <Image src={photo.url} alt="" fill sizes="25vw" className="object-cover" />
+                <Image
+                  src={photo.url}
+                  alt=""
+                  fill
+                  sizes="25vw"
+                  loading="eager"
+                  className="object-cover"
+                />
               </div>
               <Badge variant={STATUS_VARIANT[photo.status]}>{STATUS_LABEL[photo.status]}</Badge>
             </div>
