@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 // Shell do admin — header escuro fixo com wordmark + sair, conteúdo
 // centralizado sobre o fundo creme da marca (mesmo sistema visual da home e
 // da página pública do evento: Anton/tinta/laranja queimado).
-// ALL_FONT_VARIABLES fica aqui pra o seletor de fonte (AlbumBrandingForm)
+// ALL_FONT_VARIABLES fica aqui pra o seletor de fonte (EventBrandingForm)
 // conseguir mostrar o preview de cada opção na fonte real.
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (

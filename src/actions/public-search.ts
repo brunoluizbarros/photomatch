@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db/client';
-import { albums, analytics_events } from '@/lib/db/schemas';
+import { events, analytics_events } from '@/lib/db/schemas';
 import { searchPhotosByFace } from '@/lib/photo-search';
 import { isRateLimited } from '@/lib/rate-limit';
 import { and, eq } from 'drizzle-orm';
@@ -28,21 +28,21 @@ export async function searchPhotosBySelfiePublic(
     throw new Error('Muitas buscas em pouco tempo. Espere um minuto e tente de novo.');
   }
 
-  const [album] = await db
+  const [event] = await db
     .select()
-    .from(albums)
-    .where(and(eq(albums.slug, slug), eq(albums.isPublished, true)));
-  if (!album) throw new Error('Evento não encontrado');
+    .from(events)
+    .where(and(eq(events.slug, slug), eq(events.isPublished, true)));
+  if (!event) throw new Error('Evento não encontrado');
 
   const results = await searchPhotosByFace({
-    collectionId: album.rekognitionCollectionId,
+    collectionId: event.rekognitionCollectionId,
     selfieBase64,
   });
 
   // Analytics nunca pode derrubar a busca do convidado.
   try {
     await db.insert(analytics_events).values({
-      albumId: album.id,
+      eventId: event.id,
       deviceId: deviceId.slice(0, 64),
       type: 'search',
       photoCount: results.length,

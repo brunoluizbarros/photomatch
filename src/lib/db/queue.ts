@@ -79,9 +79,17 @@ export async function releaseFailure(photoId: string, attempts: number, errorMes
     .where(eq(photos.id, photoId));
 }
 
-export async function reindexFailedPhotos(albumId: string) {
+// ownerId escopa a um fotógrafo (só reprocessa as fotos que ele mesmo subiu);
+// omitido, reprocessa todas as falhas do evento — é o que faz o admin.
+export async function reindexFailedPhotos(eventId: string, ownerId?: string) {
   await db
     .update(photos)
     .set({ status: 'pending', attempts: 0, lastError: null })
-    .where(and(eq(photos.albumId, albumId), eq(photos.status, 'failed')));
+    .where(
+      and(
+        eq(photos.eventId, eventId),
+        eq(photos.status, 'failed'),
+        ownerId ? eq(photos.uploadedBy, ownerId) : undefined,
+      ),
+    );
 }

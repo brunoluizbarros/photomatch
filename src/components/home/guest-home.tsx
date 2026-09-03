@@ -1,6 +1,6 @@
 'use client';
 
-import { requestAlbumAccess, searchPublishedAlbumsByName } from '@/actions/access-requests';
+import { requestEventAccess, searchPublishedEventsByName } from '@/actions/access-requests';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -13,9 +13,9 @@ import { type FormEvent, useEffect, useState } from 'react';
 const INK = '#2a2620';
 const ORANGE = '#e8491d';
 
-type SearchResult = Awaited<ReturnType<typeof searchPublishedAlbumsByName>>[number];
+type SearchResult = Awaited<ReturnType<typeof searchPublishedEventsByName>>[number];
 
-function RequestForm({ album, onSent }: { album: SearchResult; onSent: () => void }) {
+function RequestForm({ event, onSent }: { event: SearchResult; onSent: () => void }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -23,11 +23,11 @@ function RequestForm({ album, onSent }: { album: SearchResult; onSent: () => voi
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function handleSubmit(formEvent: FormEvent) {
+    formEvent.preventDefault();
     setLoading(true);
     setError(null);
-    const result = await requestAlbumAccess({ albumId: album.id, name, email, phone });
+    const result = await requestEventAccess({ eventId: event.id, name, email, phone });
     if (!result.ok) {
       setError(result.error);
       setLoading(false);
@@ -38,7 +38,7 @@ function RequestForm({ album, onSent }: { album: SearchResult; onSent: () => voi
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 border-2 p-5" style={{ borderColor: INK }}>
-      <p className="font-display text-lg uppercase">{album.name}</p>
+      <p className="font-display text-lg uppercase">{event.name}</p>
       <div className="space-y-1">
         <Label htmlFor="guest-name">Seu nome</Label>
         <Input id="guest-name" required value={name} onChange={(e) => setName(e.target.value)} />
@@ -106,7 +106,7 @@ export function GuestHome() {
       return;
     }
     const timer = setTimeout(async () => {
-      setResults(await searchPublishedAlbumsByName(query));
+      setResults(await searchPublishedEventsByName(query));
     }, 300);
     return () => clearTimeout(timer);
   }, [query]);
@@ -143,7 +143,7 @@ export function GuestHome() {
           </div>
 
           {selected ? (
-            <RequestForm album={selected} onSent={() => setSent(true)} />
+            <RequestForm event={selected} onSent={() => setSent(true)} />
           ) : (
             <div className="space-y-2">
               {results.map((r) => (

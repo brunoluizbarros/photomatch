@@ -128,19 +128,19 @@ function DailyBars({ series }: { series: Awaited<ReturnType<typeof getDailySerie
 }
 
 // Painel de analytics reutilizado no /admin (visão geral) e em
-// /admin/albums/[id] (visão por evento) — mesmo componente, albumId opcional.
+// /admin/events/[id] (visão por evento) — mesmo componente, eventId opcional.
 export async function AnalyticsPanel({
   days,
-  albumId,
+  eventId,
   basePath,
 }: {
   days: number;
-  albumId?: string;
+  eventId?: string;
   basePath: string;
 }) {
   const [stats, series] = await Promise.all([
-    getFunnelStats(days, albumId),
-    getDailySeries(days, albumId),
+    getFunnelStats(days, eventId),
+    getDailySeries(days, eventId),
   ]);
 
   return (

@@ -3,7 +3,7 @@
 import { env } from '@/config/env';
 import { requireAdmin } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
-import { access_requests, albums, user } from '@/lib/db/schemas';
+import { events, access_requests, user } from '@/lib/db/schemas';
 import { sendEmail } from '@/lib/notify/email';
 import { sendWhatsApp } from '@/lib/notify/whatsapp';
 import { isRateLimited } from '@/lib/rate-limit';
@@ -20,27 +20,28 @@ async function getClientIp() {
   return headerList.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
 }
 
-// Público, sem login: convidado busca o evento pelo nome na home. Só álbuns
+// Público, sem login: convidado busca o evento pelo nome na home. Só eventos
 // publicados aparecem — os mesmos que já são acessíveis via /e/[slug].
-export async function searchPublishedAlbumsByName(query: string) {
+export async function searchPublishedEventsByName(query: string) {
   const ip = await getClientIp();
-  if (isRateLimited(`album-search:${ip}`, 30, 60_000)) return [];
+  if (isRateLimited(`event-search:${ip}`, 30, 60_000)) return [];
 
   const trimmed = query.trim();
   if (trimmed.length < 2) return [];
   return db
-    .select({ id: albums.id, name: albums.name, slug: albums.slug, eventDate: albums.eventDate })
-    .from(albums)
-    .where(and(eq(albums.isPublished, true), ilike(albums.name, `%${trimmed}%`)))
+    .select({ id: events.id, name: events.name, slug: events.slug, eventDate: events.eventDate })
+    .from(events)
+    .where(and(eq(events.isPublished, true), ilike(events.name, `%${trimmed}%`)))
     .limit(10);
 }
 
-// Público — cria o pedido e notifica todo admin cadastrado (tabela `user`
-// do better-auth; projeto é single-tenant, não existe "dono do álbum").
+// Público — cria o pedido e notifica os admins cadastrados (tabela `user`
+// do better-auth, papel 'admin' — fotógrafo e atendimento não administram
+// eventos, não faz sentido notificá-los de pedido de acesso).
 // Falha de notificação nunca derruba o pedido: ele já está salvo, o admin
 // vê no painel mesmo se o e-mail não sair.
-export async function requestAlbumAccess(input: {
-  albumId: string;
+export async function requestEventAccess(input: {
+  eventId: string;
   name: string;
   email: string;
   phone: string;
@@ -59,18 +60,18 @@ export async function requestAlbumAccess(input: {
     return { ok: false as const, error: 'Dados inválidos.' };
   }
 
-  const [album] = await db
+  const [event] = await db
     .select()
-    .from(albums)
-    .where(and(eq(albums.id, input.albumId), eq(albums.isPublished, true)));
-  if (!album) return { ok: false as const, error: 'Evento não encontrado.' };
+    .from(events)
+    .where(and(eq(events.id, input.eventId), eq(events.isPublished, true)));
+  if (!event) return { ok: false as const, error: 'Evento não encontrado.' };
 
   const [request] = await db
     .insert(access_requests)
-    .values({ albumId: album.id, name: name || null, email, phone })
+    .values({ eventId: event.id, name: name || null, email, phone })
     .returning();
 
-  const admins = await db.select({ email: user.email }).from(user);
+  const admins = await db.select({ email: user.email }).from(user).where(eq(user.role, 'admin'));
   if (admins.length > 0) {
     // Todo dado do convidado é escapado antes de entrar no HTML — o
     // formulário é público, sem login, então nome/e-mail/telefone são
@@ -78,11 +79,11 @@ export async function requestAlbumAccess(input: {
     const safeName = escapeHtml(name || email);
     const safeEmail = escapeHtml(email);
     const safePhone = escapeHtml(phone);
-    const safeAlbumName = escapeHtml(album.name);
+    const safeEventName = escapeHtml(event.name);
     const emailResult = await sendEmail({
       to: admins.map((a) => a.email),
-      subject: `Novo pedido de acesso — ${safeAlbumName}`,
-      html: `<p>${safeName} pediu acesso a "${safeAlbumName}".</p><p>E-mail: ${safeEmail}<br/>Telefone: ${safePhone}</p><p><a href="${env.NEXT_PUBLIC_APP_URL}/admin/albums/${album.id}">Ver pedido</a></p>`,
+      subject: `Novo pedido de acesso — ${safeEventName}`,
+      html: `<p>${safeName} pediu acesso a "${safeEventName}".</p><p>E-mail: ${safeEmail}<br/>Telefone: ${safePhone}</p><p><a href="${env.NEXT_PUBLIC_APP_URL}/admin/events/${event.id}">Ver pedido</a></p>`,
     });
     if (!emailResult.ok) console.error('organizer notification failed', emailResult.error);
   }
@@ -90,12 +91,12 @@ export async function requestAlbumAccess(input: {
   return { ok: true as const, requestId: request.id };
 }
 
-export async function getAccessRequests(albumId: string) {
+export async function getAccessRequests(eventId: string) {
   await requireAdmin();
   return db
     .select()
     .from(access_requests)
-    .where(eq(access_requests.albumId, albumId))
+    .where(eq(access_requests.eventId, eventId))
     .orderBy(desc(access_requests.createdAt));
 }
 
@@ -112,21 +113,21 @@ export async function approveAccessRequest(id: string) {
   await requireAdmin();
   const [request] = await db.select().from(access_requests).where(eq(access_requests.id, id));
   if (!request) return { ok: false as const, error: 'Pedido não encontrado.' };
-  const [album] = await db.select().from(albums).where(eq(albums.id, request.albumId));
-  if (!album) return { ok: false as const, error: 'Álbum não encontrado.' };
+  const [event] = await db.select().from(events).where(eq(events.id, request.eventId));
+  if (!event) return { ok: false as const, error: 'Evento não encontrado.' };
 
-  const link = `${env.NEXT_PUBLIC_APP_URL}/e/${album.slug}`;
-  const safeAlbumName = escapeHtml(album.name);
+  const link = `${env.NEXT_PUBLIC_APP_URL}/e/${event.slug}`;
+  const safeEventName = escapeHtml(event.name);
   const emailResult = await sendEmail({
     to: [request.email],
-    subject: `Seu acesso a ${safeAlbumName} foi liberado`,
+    subject: `Seu acesso a ${safeEventName} foi liberado`,
     html: `<p>Seu pedido foi aprovado. Acesse suas fotos:</p><p><a href="${link}">${link}</a></p>`,
   });
   const phone = toE164BR(request.phone);
   const whatsappResult = phone
     ? await sendWhatsApp({
         to: phone,
-        body: `Seu acesso a "${album.name}" foi liberado! Acesse: ${link}`,
+        body: `Seu acesso a "${event.name}" foi liberado! Acesse: ${link}`,
       })
     : { ok: false as const, error: 'Telefone inválido' };
 
@@ -140,7 +141,7 @@ export async function approveAccessRequest(id: string) {
     })
     .where(eq(access_requests.id, id));
 
-  revalidatePath(`/admin/albums/${album.id}`);
+  revalidatePath(`/admin/events/${event.id}`);
   return { ok: true as const, emailResult, whatsappResult };
 }
 
@@ -152,6 +153,6 @@ export async function rejectAccessRequest(id: string) {
     .update(access_requests)
     .set({ status: 'rejected', respondedAt: new Date() })
     .where(eq(access_requests.id, id));
-  revalidatePath(`/admin/albums/${request.albumId}`);
+  revalidatePath(`/admin/events/${request.eventId}`);
   return { ok: true as const };
 }

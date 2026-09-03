@@ -9,8 +9,21 @@ export const auth = betterAuth({
   baseURL: env.NEXT_PUBLIC_APP_URL,
   emailAndPassword: {
     enabled: true,
-    // Painel fechado: sem autocadastro. Admins são criados via
+    // Painel fechado: sem autocadastro. Usuários são criados via
     // `pnpm create-admin` (scripts/create-admin.ts).
     disableSignUp: true,
+  },
+  user: {
+    additionalFields: {
+      // 'admin' | 'photographer' | 'support' — ver src/lib/auth/require-admin.ts.
+      // input:false: ninguém envia role no body de signup/updateUser, senão um
+      // usuário logado poderia se auto-promover via authClient.updateUser().
+      role: {
+        type: ['admin', 'photographer', 'support'],
+        defaultValue: 'admin',
+        input: false,
+        required: false,
+      },
+    },
   },
 });

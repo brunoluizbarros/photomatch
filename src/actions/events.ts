@@ -1,54 +1,56 @@
 'use server';
 
-import { requireAdmin } from '@/lib/auth/require-admin';
+import { ownedBy, requireAdmin, requireUser } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
-import { albums, photos } from '@/lib/db/schemas';
+import { events, photos } from '@/lib/db/schemas';
 import {
-  collectionIdForAlbum,
-  createAlbumCollection,
-  deleteAlbumCollection,
+  collectionIdForEvent,
+  createEventCollection,
+  deleteEventCollection,
 } from '@/lib/rekognition/faces';
 import { createId } from '@paralleldrive/cuid2';
 import { and, eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
-export async function listAlbums() {
-  await requireAdmin();
-  return db.select().from(albums).orderBy(albums.createdAt);
+// Lista de eventos pro /admin — fotógrafo e atendimento veem todos os
+// eventos (só a galeria de fotos é escopada por dono).
+export async function listEvents() {
+  await requireUser();
+  return db.select().from(events).orderBy(events.createdAt);
 }
 
 // Cards de estatística do painel principal — porta o padrão de dashboard do
 // ticketeria-techstage (contagens agregadas + destaque em número grande).
 export async function getDashboardStats() {
   await requireAdmin();
-  const [albumStats] = await db
+  const [eventStats] = await db
     .select({
       total: sql<number>`count(*)::int`,
-      published: sql<number>`count(*) filter (where ${albums.isPublished})::int`,
+      published: sql<number>`count(*) filter (where ${events.isPublished})::int`,
     })
-    .from(albums);
+    .from(events);
   const [photoStats] = await db
     .select({
       total: sql<number>`count(*)::int`,
       indexed: sql<number>`count(*) filter (where ${photos.status} = 'indexed')::int`,
     })
     .from(photos);
-  return { albums: albumStats, photos: photoStats };
+  return { events: eventStats, photos: photoStats };
 }
 
-export async function getAlbum(id: string) {
-  await requireAdmin();
-  const [album] = await db.select().from(albums).where(eq(albums.id, id));
-  return album ?? null;
+export async function getEvent(id: string) {
+  await requireUser();
+  const [event] = await db.select().from(events).where(eq(events.id, id));
+  return event ?? null;
 }
 
 // Sem sessão de propósito: é o ponto de entrada da página pública /e/[slug].
-export async function getPublishedAlbumBySlug(slug: string) {
-  const [album] = await db
+export async function getPublishedEventBySlug(slug: string) {
+  const [event] = await db
     .select()
-    .from(albums)
-    .where(and(eq(albums.slug, slug), eq(albums.isPublished, true)));
-  return album ?? null;
+    .from(events)
+    .where(and(eq(events.slug, slug), eq(events.isPublished, true)));
+  return event ?? null;
 }
 
 // Retorna {ok, error} em vez de lançar pro caso esperado (slug duplicado):
@@ -56,7 +58,7 @@ export async function getPublishedAlbumBySlug(slug: string) {
 // produção (substitui por um texto genérico + digest, de propósito, pra não
 // vazar detalhe de servidor) — só falhas verdadeiramente inesperadas (AWS,
 // banco) devem continuar lançando e caindo nesse comportamento redigido.
-export async function createAlbum(input: { name: string; slug: string; eventDate?: string }) {
+export async function createEvent(input: { name: string; slug: string; eventDate?: string }) {
   await requireAdmin();
 
   // Checa o slug ANTES de criar a Collection: o insert é a última coisa que
@@ -64,19 +66,19 @@ export async function createAlbum(input: { name: string; slug: string; eventDate
   // Ainda racy sob submits concorrentes — quem garante de verdade é o índice
   // único do slug; isto só evita o caso comum (admin reenvia um nome já usado).
   const [taken] = await db
-    .select({ id: albums.id })
-    .from(albums)
-    .where(eq(albums.slug, input.slug));
-  if (taken) return { ok: false as const, error: 'Já existe um álbum com esse slug.' };
+    .select({ id: events.id })
+    .from(events)
+    .where(eq(events.slug, input.slug));
+  if (taken) return { ok: false as const, error: 'Já existe um evento com esse slug.' };
 
   // Cria a Collection na AWS antes do INSERT: se a AWS falhar, não sobra
   // linha órfã no Postgres.
   const id = createId();
-  const collectionId = collectionIdForAlbum(id);
-  await createAlbumCollection(collectionId);
+  const collectionId = collectionIdForEvent(id);
+  await createEventCollection(collectionId);
 
-  const [album] = await db
-    .insert(albums)
+  const [event] = await db
+    .insert(events)
     .values({
       id,
       name: input.name,
@@ -89,21 +91,21 @@ export async function createAlbum(input: { name: string; slug: string; eventDate
     .returning();
 
   revalidatePath('/admin');
-  return { ok: true as const, album };
+  return { ok: true as const, event };
 }
 
-export async function setPublished(albumId: string, isPublished: boolean) {
+export async function setPublished(eventId: string, isPublished: boolean) {
   await requireAdmin();
-  await db.update(albums).set({ isPublished }).where(eq(albums.id, albumId));
-  revalidatePath(`/admin/albums/${albumId}`);
+  await db.update(events).set({ isPublished }).where(eq(events.id, eventId));
+  revalidatePath(`/admin/events/${eventId}`);
 }
 
 // Customização da página pública /e/[slug] — template editorial portado do
 // Réveillon Carneiros. Todos os campos são opcionais: sem eles, a página cai
 // nos defaults do template (gradiente com a cor primária no lugar da foto de
 // capa, sem logo, texto de boas-vindas genérico).
-export async function updateAlbumBranding(
-  albumId: string,
+export async function updateEventBranding(
+  eventId: string,
   input: {
     heroImageKey: string | null;
     logoImageKey: string | null;
@@ -115,7 +117,7 @@ export async function updateAlbumBranding(
 ) {
   await requireAdmin();
   await db
-    .update(albums)
+    .update(events)
     .set({
       heroImageKey: input.heroImageKey,
       logoImageKey: input.logoImageKey,
@@ -124,24 +126,24 @@ export async function updateAlbumBranding(
       bodyColor: input.bodyColor,
       welcomeMessage: input.welcomeMessage || null,
     })
-    .where(eq(albums.id, albumId));
-  revalidatePath(`/admin/albums/${albumId}`);
+    .where(eq(events.id, eventId));
+  revalidatePath(`/admin/events/${eventId}`);
 }
 
 // Descarte de biometria (LGPD): apaga a Collection inteira na AWS numa única
 // chamada, depois o DELETE com cascade limpa photos e photo_faces.
-export async function deleteAlbum(albumId: string) {
+export async function deleteEvent(eventId: string) {
   await requireAdmin();
-  const [album] = await db.select().from(albums).where(eq(albums.id, albumId));
-  if (!album) throw new Error('Album not found');
+  const [event] = await db.select().from(events).where(eq(events.id, eventId));
+  if (!event) throw new Error('Event not found');
 
-  await deleteAlbumCollection(album.rekognitionCollectionId);
-  await db.delete(albums).where(eq(albums.id, albumId));
+  await deleteEventCollection(event.rekognitionCollectionId);
+  await db.delete(events).where(eq(events.id, eventId));
   revalidatePath('/admin');
 }
 
-export async function getAlbumProgress(albumId: string) {
-  await requireAdmin();
+export async function getEventProgress(eventId: string) {
+  const { role, userId } = await requireUser();
   const rows = await db
     .select({
       status: photos.status,
@@ -149,7 +151,7 @@ export async function getAlbumProgress(albumId: string) {
       unindexed: sql<number>`coalesce(sum(${photos.unindexedFaceCount}), 0)::int`,
     })
     .from(photos)
-    .where(eq(photos.albumId, albumId))
+    .where(and(eq(photos.eventId, eventId), ownedBy(role, userId, photos.uploadedBy)))
     .groupBy(photos.status);
 
   const progress = { awaiting_upload: 0, pending: 0, processing: 0, indexed: 0, failed: 0 };

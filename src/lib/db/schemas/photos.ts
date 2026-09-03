@@ -2,6 +2,8 @@ import { createId } from '@paralleldrive/cuid2';
 import { relations } from 'drizzle-orm';
 import { index, integer, pgEnum, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { albums } from './albums';
+import { user } from './auth';
+import { events } from './events';
 import { photo_faces } from './photo_faces';
 
 // awaiting_upload -> pending -> processing -> indexed | failed
@@ -24,9 +26,16 @@ export const photos = pgTable(
       .notNull()
       .primaryKey()
       .$defaultFn(() => createId()),
-    albumId: text('album_id')
+    eventId: text('event_id')
       .notNull()
-      .references(() => albums.id, { onDelete: 'cascade' }),
+      .references(() => events.id, { onDelete: 'cascade' }),
+    // Pasta dentro do evento — opcional. Apagar o álbum não pode apagar a
+    // foto (onDelete: 'set null'); a foto cai em "Sem álbum".
+    albumId: text('album_id').references(() => albums.id, { onDelete: 'set null' }),
+    // Quem subiu a foto (fotógrafo ou admin) — usado para escopar a galeria
+    // do fotógrafo às fotos dele. Nulo para fotos antigas (pré-existentes ao
+    // conceito de fotógrafo) e para import por link/CLI.
+    uploadedBy: text('uploaded_by').references(() => user.id, { onDelete: 'set null' }),
     storageKey: text('storage_key').notNull().unique(),
     // Origem quando a foto veio de um link público (Drive/Dropbox) em vez do
     // upload pelo navegador: o worker baixa daqui, grava no bucket e zera o
@@ -47,10 +56,14 @@ export const photos = pgTable(
     indexedAt: timestamp('indexed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index('photos_album_id_status_idx').on(table.albumId, table.status)],
+  (table) => [index('photos_event_id_status_idx').on(table.eventId, table.status)],
 );
 
 export const photosRelations = relations(photos, ({ one, many }) => ({
+  event: one(events, {
+    fields: [photos.eventId],
+    references: [events.id],
+  }),
   album: one(albums, {
     fields: [photos.albumId],
     references: [albums.id],

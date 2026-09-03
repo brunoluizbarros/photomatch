@@ -3,11 +3,11 @@
 import { funnelRates } from '@/lib/analytics/funnel-rates';
 import { requireAdmin } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
-import { albums, analytics_events } from '@/lib/db/schemas';
+import { events, analytics_events } from '@/lib/db/schemas';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 
 // ponytail: timezone fixa. O produto é 100% pt-BR; um evento fora do fuso
-// erraria o corte do dia, não o total. Vira coluna no álbum se aparecer demanda.
+// erraria o corte do dia, não o total. Vira coluna no evento se aparecer demanda.
 const TZ = 'America/Sao_Paulo';
 
 function windowStart(days: number) {
@@ -17,11 +17,11 @@ function windowStart(days: number) {
 export type FunnelStats = Awaited<ReturnType<typeof getFunnelStats>>;
 
 // Totais + taxas do funil visita -> busca -> resultado. Serve tanto a view
-// geral (sem albumId) quanto a view por evento (com albumId) — mesma query.
-export async function getFunnelStats(days = 30, albumId?: string) {
+// geral (sem eventId) quanto a view por evento (com eventId) — mesma query.
+export async function getFunnelStats(days = 30, eventId?: string) {
   await requireAdmin();
   const conditions = [gte(analytics_events.createdAt, windowStart(days))];
-  if (albumId) conditions.push(eq(analytics_events.albumId, albumId));
+  if (eventId) conditions.push(eq(analytics_events.eventId, eventId));
 
   const [row] = await db
     .select({
@@ -37,45 +37,45 @@ export async function getFunnelStats(days = 30, albumId?: string) {
   return { ...stats, ...funnelRates(stats) };
 }
 
-export type AlbumStats = Awaited<ReturnType<typeof getStatsByAlbum>>[number];
+export type EventStats = Awaited<ReturnType<typeof getStatsByEvent>>[number];
 
-// Lista de álbuns já com os números do funil — substitui listAlbums() no
+// Lista de eventos já com os números do funil — substitui listEvents() no
 // /admin. O filtro de data fica no ON do leftJoin, não no WHERE: senão
-// álbuns sem tráfego no período desaparecem da lista.
-export async function getStatsByAlbum(days = 30) {
+// eventos sem tráfego no período desaparecem da lista.
+export async function getStatsByEvent(days = 30) {
   await requireAdmin();
   const searches = sql`count(*) filter (where ${analytics_events.type} = 'search')`;
   return db
     .select({
-      albumId: albums.id,
-      name: albums.name,
-      slug: albums.slug,
-      isPublished: albums.isPublished,
-      createdAt: albums.createdAt,
+      eventId: events.id,
+      name: events.name,
+      slug: events.slug,
+      isPublished: events.isPublished,
+      createdAt: events.createdAt,
       visits: sql<number>`count(*) filter (where ${analytics_events.type} = 'visit')::int`,
       searches: sql<number>`${searches}::int`,
       found: sql<number>`count(*) filter (where ${analytics_events.type} = 'search' and ${analytics_events.photoCount} > 0)::int`,
       people: sql<number>`count(distinct ${analytics_events.deviceId})::int`,
     })
-    .from(albums)
+    .from(events)
     .leftJoin(
       analytics_events,
       and(
-        eq(analytics_events.albumId, albums.id),
+        eq(analytics_events.eventId, events.id),
         gte(analytics_events.createdAt, windowStart(days)),
       ),
     )
-    .groupBy(albums.id)
-    .orderBy(desc(searches), desc(albums.createdAt));
+    .groupBy(events.id)
+    .orderBy(desc(searches), desc(events.createdAt));
 }
 
 export type DailyPoint = { day: string; visits: number; searches: number; found: number };
 
 // Série diária, janela em dias (padrão 30). generate_series preenche os dias
 // sem tráfego — sem isso o gráfico "pula" dias vazios e engana visualmente.
-export async function getDailySeries(days = 30, albumId?: string): Promise<DailyPoint[]> {
+export async function getDailySeries(days = 30, eventId?: string): Promise<DailyPoint[]> {
   await requireAdmin();
-  const albumFilter = albumId ? sql`and e.album_id = ${albumId}` : sql``;
+  const eventFilter = eventId ? sql`and e.event_id = ${eventId}` : sql``;
   const result = await db.execute<DailyPoint>(sql`
     select
       to_char(d.day, 'YYYY-MM-DD') as day,
@@ -90,7 +90,7 @@ export async function getDailySeries(days = 30, albumId?: string): Promise<Daily
     left join analytics_events e
       on e.created_at >= ${windowStart(days)}
       and (e.created_at at time zone ${TZ})::date = d.day
-      ${albumFilter}
+      ${eventFilter}
     group by d.day
     order by d.day
   `);

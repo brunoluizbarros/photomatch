@@ -18,21 +18,26 @@ export type FaceMatch = {
   similarity: number;
 };
 
-// Uma Rekognition Collection por álbum — a busca por selfie fica naturalmente
+// Uma Rekognition Collection por evento — a busca por selfie fica naturalmente
 // escopada ao evento, sem precisar filtrar depois.
-export function collectionIdForAlbum(albumId: string) {
-  return `album-${albumId}`;
+//
+// ponytail: o prefixo "album-" é literal, não "event-" — é o nome real das
+// Collections já criadas na AWS e persistido em events.rekognitionCollectionId
+// (de quando "álbum" era o nome do evento no código). Trocar o prefixo
+// quebraria todo evento existente; a função é que ganhou o nome novo.
+export function collectionIdForEvent(eventId: string) {
+  return `album-${eventId}`;
 }
 
-export async function createAlbumCollection(collectionId: string) {
+export async function createEventCollection(collectionId: string) {
   await rekognition.send(new CreateCollectionCommand({ CollectionId: collectionId }));
 }
 
-export async function deleteAlbumCollection(collectionId: string) {
+export async function deleteEventCollection(collectionId: string) {
   await rekognition.send(new DeleteCollectionCommand({ CollectionId: collectionId }));
 }
 
-// Indexa os rostos de uma foto na coleção do álbum. ExternalImageId = photoId,
+// Indexa os rostos de uma foto na coleção do evento. ExternalImageId = photoId,
 // o que permite reconstruir a foto a partir de um FaceMatch sem outra consulta.
 export async function indexPhotoFaces(params: {
   collectionId: string;
@@ -63,7 +68,7 @@ export async function indexPhotoFaces(params: {
   return { faces, unindexedCount: result.UnindexedFaces?.length ?? 0 };
 }
 
-// Busca por selfie dentro da coleção do álbum. Retorna os matches ordenados
+// Busca por selfie dentro da coleção do evento. Retorna os matches ordenados
 // por similaridade (0-100); o corte pelo threshold acontece em quem chama.
 export async function searchFacesBySelfie(params: {
   collectionId: string;

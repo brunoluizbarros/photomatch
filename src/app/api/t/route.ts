@@ -1,5 +1,5 @@
 import { db } from '@/lib/db/client';
-import { albums, analytics_events } from '@/lib/db/schemas';
+import { events, analytics_events } from '@/lib/db/schemas';
 import { isRateLimited } from '@/lib/rate-limit';
 import { eq } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
@@ -20,10 +20,10 @@ export async function POST(request: NextRequest) {
     if (typeof slug !== 'string' || typeof deviceId !== 'string') return noContent;
     if (slug.length > 200 || deviceId.length > 64) return noContent;
 
-    const [album] = await db.select({ id: albums.id }).from(albums).where(eq(albums.slug, slug));
-    if (!album) return noContent;
+    const [event] = await db.select({ id: events.id }).from(events).where(eq(events.slug, slug));
+    if (!event) return noContent;
 
-    await db.insert(analytics_events).values({ albumId: album.id, deviceId, type: 'visit' });
+    await db.insert(analytics_events).values({ eventId: event.id, deviceId, type: 'visit' });
   } catch (err) {
     console.error('visit ping failed', err);
   }

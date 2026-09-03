@@ -1,33 +1,43 @@
 'use server';
 
-import { requireAdmin } from '@/lib/auth/require-admin';
+import { ownedBy, requireUser } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
 import { reindexFailedPhotos as reindexFailedPhotosInDb } from '@/lib/db/queue';
-import { albums, photos } from '@/lib/db/schemas';
+import { events, photos } from '@/lib/db/schemas';
 import { resolveShareLink } from '@/lib/import/share-link';
 import { getPresignedDownloadUrl, getPresignedUploadUrl, headObject } from '@/lib/storage/presign';
 import { randomFilename } from '@/lib/utils/random-filename';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 const MAX_IMPORT = 1000;
 
 export async function requestPhotoUpload(input: {
-  albumId: string;
+  eventId: string;
+  albumId?: string | null;
   filename: string;
   contentType: string;
 }) {
-  await requireAdmin();
+  const { userId } = await requireUser('admin', 'photographer');
 
-  const [album] = await db.select().from(albums).where(eq(albums.id, input.albumId));
-  if (!album) throw new Error('Album not found');
+  const [event] = await db.select().from(events).where(eq(events.id, input.eventId));
+  if (!event) throw new Error('Event not found');
 
-  const storageKey = `albums/${album.id}/${randomFilename(input.filename)}`;
+  // ponytail: prefixo "albums/" mantido de propósito — é o mesmo usado pelas
+  // chaves já existentes no bucket (de quando "álbum" era o nome do evento no
+  // código); a chave é opaca, trocar o prefixo não traz ganho.
+  const storageKey = `albums/${event.id}/${randomFilename(input.filename)}`;
   const uploadUrl = await getPresignedUploadUrl(storageKey, input.contentType);
 
   const [photo] = await db
     .insert(photos)
-    .values({ albumId: album.id, storageKey, status: 'awaiting_upload' })
+    .values({
+      eventId: event.id,
+      albumId: input.albumId || null,
+      uploadedBy: userId,
+      storageKey,
+      status: 'awaiting_upload',
+    })
     .returning();
 
   return { photoId: photo.id, uploadUrl };
@@ -37,9 +47,12 @@ export async function requestPhotoUpload(input: {
 // de liberar a foto para a fila — evita fotos "pending" fantasma se o
 // navegador falhar silenciosamente entre o presign e o upload.
 export async function confirmPhotoUploaded(photoId: string) {
-  await requireAdmin();
+  const { role, userId } = await requireUser('admin', 'photographer');
 
-  const [photo] = await db.select().from(photos).where(eq(photos.id, photoId));
+  const [photo] = await db
+    .select()
+    .from(photos)
+    .where(and(eq(photos.id, photoId), ownedBy(role, userId, photos.uploadedBy)));
   if (!photo) throw new Error('Photo not found');
 
   const head = await headObject(photo.storageKey);
@@ -49,8 +62,8 @@ export async function confirmPhotoUploaded(photoId: string) {
     .set({ status: 'pending', bytes: head.ContentLength ?? null })
     .where(eq(photos.id, photoId));
 
-  revalidatePath(`/admin/albums/${photo.albumId}`);
-  revalidatePath(`/admin/albums/${photo.albumId}/photos`);
+  revalidatePath(`/admin/events/${photo.eventId}`);
+  revalidatePath(`/admin/events/${photo.eventId}/photos`);
 }
 
 // Importa fotos de um link público (Google Drive ou Dropbox) — só resolve o
@@ -62,11 +75,15 @@ export async function confirmPhotoUploaded(photoId: string) {
 // pasta privada, pasta do Dropbox) são todas mensagens que o admin precisa
 // ler pra corrigir o link — e o Next redige a mensagem de erros lançados em
 // Server Actions no build de produção, trocando por um texto genérico + digest.
-export async function importFromShareLink(input: { albumId: string; url: string }) {
-  await requireAdmin();
+export async function importFromShareLink(input: {
+  eventId: string;
+  albumId?: string | null;
+  url: string;
+}) {
+  const { userId } = await requireUser('admin', 'photographer');
 
-  const [album] = await db.select().from(albums).where(eq(albums.id, input.albumId));
-  if (!album) return { ok: false as const, error: 'Álbum não encontrado.' };
+  const [event] = await db.select().from(events).where(eq(events.id, input.eventId));
+  if (!event) return { ok: false as const, error: 'Evento não encontrado.' };
 
   let images: Awaited<ReturnType<typeof resolveShareLink>>;
   try {
@@ -83,48 +100,53 @@ export async function importFromShareLink(input: { albumId: string; url: string 
 
   await db.insert(photos).values(
     images.map((img) => ({
-      albumId: album.id,
-      storageKey: `albums/${album.id}/${randomFilename(img.filename)}`,
+      eventId: event.id,
+      albumId: input.albumId || null,
+      uploadedBy: userId,
+      storageKey: `albums/${event.id}/${randomFilename(img.filename)}`,
       sourceUrl: img.url,
       status: 'pending' as const,
     })),
   );
 
-  revalidatePath(`/admin/albums/${album.id}`);
-  revalidatePath(`/admin/albums/${album.id}/photos`);
+  revalidatePath(`/admin/events/${event.id}`);
+  revalidatePath(`/admin/events/${event.id}/photos`);
   return { ok: true as const, count: images.length };
 }
 
-export async function reindexFailedPhotos(albumId: string) {
-  await requireAdmin();
-  await reindexFailedPhotosInDb(albumId);
-  revalidatePath(`/admin/albums/${albumId}`);
-  revalidatePath(`/admin/albums/${albumId}/photos`);
+export async function reindexFailedPhotos(eventId: string) {
+  const { role, userId } = await requireUser('admin', 'photographer');
+  await reindexFailedPhotosInDb(eventId, role === 'photographer' ? userId : undefined);
+  revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath(`/admin/events/${eventId}/photos`);
 }
 
-export async function getPhotosByAlbum(albumId: string, limit = 50, offset = 0) {
-  await requireAdmin();
-  return db
-    .select()
-    .from(photos)
-    .where(eq(photos.albumId, albumId))
-    .orderBy(photos.createdAt)
-    .limit(limit)
-    .offset(offset);
-}
+// Galeria paginada do admin (/admin/events/[id]/photos) — mostra as fotos já
+// enviadas com URL assinada de download, pra conferência visual. Fotógrafo só
+// vê as fotos que ele mesmo subiu; opcionalmente filtra por álbum (pasta) —
+// albumId === null explicitamente busca só "sem álbum".
+export async function getEventPhotosPage(
+  eventId: string,
+  page: number,
+  pageSize = 12,
+  albumFilter?: { albumId: string | null },
+) {
+  const { role, userId } = await requireUser();
 
-// Galeria paginada do admin (/admin/albums/[id]/photos) — mostra as fotos
-// já enviadas com URL assinada de download, pra conferência visual.
-export async function getAlbumPhotosPage(albumId: string, page: number, pageSize = 12) {
-  await requireAdmin();
+  const conditions = [eq(photos.eventId, eventId), ownedBy(role, userId, photos.uploadedBy)];
+  if (albumFilter) {
+    conditions.push(
+      albumFilter.albumId === null
+        ? sql`${photos.albumId} is null`
+        : eq(photos.albumId, albumFilter.albumId),
+    );
+  }
+  const where = and(...conditions);
 
   const offset = (Math.max(1, page) - 1) * pageSize;
   const [rows, [{ count }]] = await Promise.all([
-    getPhotosByAlbum(albumId, pageSize, offset),
-    db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(photos)
-      .where(eq(photos.albumId, albumId)),
+    db.select().from(photos).where(where).orderBy(photos.createdAt).limit(pageSize).offset(offset),
+    db.select({ count: sql<number>`count(*)::int` }).from(photos).where(where),
   ]);
 
   const withUrls = await Promise.all(
@@ -132,4 +154,25 @@ export async function getAlbumPhotosPage(albumId: string, page: number, pageSize
   );
 
   return { photos: withUrls, total: count, page, pageSize };
+}
+
+// Página de impressão (/admin/events/[id]/print) — recebe só os IDs e assina
+// as URLs aqui, no servidor, com o mesmo escopo de dono da galeria. Nunca
+// aceitar uma URL assinada vinda do cliente: um fotógrafo colando IDs alheios
+// na querystring não deve conseguir ver/imprimir foto de outro.
+export async function getPhotosForPrint(eventId: string, photoIds: string[]) {
+  const { role, userId } = await requireUser();
+  const rows = await db
+    .select()
+    .from(photos)
+    .where(
+      and(
+        eq(photos.eventId, eventId),
+        inArray(photos.id, photoIds),
+        ownedBy(role, userId, photos.uploadedBy),
+      ),
+    );
+  return Promise.all(
+    rows.map(async (photo) => ({ ...photo, url: await getPresignedDownloadUrl(photo.storageKey) })),
+  );
 }

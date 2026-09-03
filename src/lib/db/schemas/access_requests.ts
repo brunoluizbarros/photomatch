@@ -1,6 +1,6 @@
 import { createId } from '@paralleldrive/cuid2';
 import { index, pgEnum, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
-import { albums } from './albums';
+import { events } from './events';
 
 export const accessRequestStatusEnum = pgEnum('access_request_status', [
   'pending',
@@ -19,9 +19,9 @@ export const access_requests = pgTable(
       .notNull()
       .primaryKey()
       .$defaultFn(() => createId()),
-    albumId: text('album_id')
+    eventId: text('event_id')
       .notNull()
-      .references(() => albums.id, { onDelete: 'cascade' }),
+      .references(() => events.id, { onDelete: 'cascade' }),
     name: text('name'),
     email: text('email').notNull(),
     // Formato livre digitado pela pessoa — normalizado pra E.164 só na hora
@@ -33,5 +33,5 @@ export const access_requests = pgTable(
     respondedAt: timestamp('responded_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index('access_requests_album_id_status_idx').on(table.albumId, table.status)],
+  (table) => [index('access_requests_event_id_status_idx').on(table.eventId, table.status)],
 );

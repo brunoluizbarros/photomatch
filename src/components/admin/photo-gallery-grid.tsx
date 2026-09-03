@@ -1,9 +1,11 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { photos } from '@/lib/db/schemas';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Printer, X } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 type Status = (typeof photos.$inferSelect)['status'];
@@ -108,20 +110,37 @@ function PhotoModal({
   );
 }
 
-export function PhotoGalleryGrid({ photos: pagePhotos }: { photos: GalleryPhoto[] }) {
+// eventId habilita a seleção + impressão (a página pública e o admin/[test]
+// não passam eventId e ficam sem essa barra, só a galeria de leitura).
+export function PhotoGalleryGrid({
+  photos: pagePhotos,
+  eventId,
+}: {
+  photos: GalleryPhoto[];
+  eventId?: string;
+}) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   return (
     <>
       <div className="grid grid-cols-4 gap-3">
         {pagePhotos.map((photo, i) => (
-          <button
-            key={photo.id}
-            type="button"
-            onClick={() => setSelectedIndex(i)}
-            className="space-y-1.5 text-left"
-          >
-            <div className="relative aspect-square overflow-hidden rounded-md border border-[var(--border)] bg-[var(--muted)] transition-opacity hover:opacity-90">
+          <div key={photo.id} className="space-y-1.5">
+            <button
+              type="button"
+              onClick={() => setSelectedIndex(i)}
+              className="relative block aspect-square w-full overflow-hidden rounded-md border border-[var(--border)] bg-[var(--muted)] text-left transition-opacity hover:opacity-90"
+            >
               <Image
                 src={photo.url}
                 alt=""
@@ -130,11 +149,42 @@ export function PhotoGalleryGrid({ photos: pagePhotos }: { photos: GalleryPhoto[
                 loading="eager"
                 className="object-cover"
               />
-            </div>
+              {eventId && (
+                <Checkbox
+                  checked={selected.has(photo.id)}
+                  onCheckedChange={() => toggleSelected(photo.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute top-2 left-2 border-white bg-black/40"
+                  aria-label="Selecionar foto"
+                />
+              )}
+            </button>
             <Badge variant={STATUS_VARIANT[photo.status]}>{STATUS_LABEL[photo.status]}</Badge>
-          </button>
+          </div>
         ))}
       </div>
+
+      {eventId && selected.size > 0 && (
+        <div className="sticky bottom-4 z-40 mt-4 flex items-center justify-between gap-3 rounded-md border border-[var(--border)] bg-[var(--background)] p-3 shadow-lg">
+          <span className="text-sm">{selected.size} selecionada(s)</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelected(new Set())}
+              className="text-[var(--muted-foreground)] text-sm underline"
+            >
+              Limpar
+            </button>
+            <Link
+              href={`/admin/events/${eventId}/print?ids=${[...selected].join(',')}`}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[var(--primary)] px-3 text-[var(--primary-foreground)] text-sm font-semibold"
+            >
+              <Printer className="size-4" />
+              Imprimir
+            </Link>
+          </div>
+        </div>
+      )}
 
       {selectedIndex !== null && (
         <PhotoModal

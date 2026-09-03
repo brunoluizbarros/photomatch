@@ -1,8 +1,8 @@
 'use client';
 
-import { createAlbum } from '@/actions/albums';
-import { AlbumBrandingForm } from '@/components/admin/album-branding-form';
-import { AlbumDetail } from '@/components/admin/album-detail';
+import { createEvent } from '@/actions/events';
+import { EventBrandingForm } from '@/components/admin/event-branding-form';
+import { EventDetail } from '@/components/admin/event-detail';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -13,8 +13,8 @@ import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 
-type CreateAlbumResult = Awaited<ReturnType<typeof createAlbum>>;
-type CreatedAlbum = Extract<CreateAlbumResult, { ok: true }>['album'];
+type CreateEventResult = Awaited<ReturnType<typeof createEvent>>;
+type CreatedEvent = Extract<CreateEventResult, { ok: true }>['event'];
 
 const STEP_LABELS = ['Dados', 'Design', 'Fotos'] as const;
 
@@ -44,8 +44,8 @@ function StepIndicator({ step }: { step: number }) {
 }
 
 // Passo 1 do wizard: mesma lógica de nome/slug do form antigo, mais data do
-// evento (createAlbum já aceitava eventDate, mas nada enviava até agora).
-function StepBasics({ onCreated }: { onCreated: (album: CreatedAlbum) => void }) {
+// evento (createEvent já aceitava eventDate, mas nada enviava até agora).
+function StepBasics({ onCreated }: { onCreated: (event: CreatedEvent) => void }) {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
@@ -53,17 +53,17 @@ function StepBasics({ onCreated }: { onCreated: (album: CreatedAlbum) => void })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function handleSubmit(formEvent: FormEvent) {
+    formEvent.preventDefault();
     setLoading(true);
     setError(null);
-    const result = await createAlbum({ name, slug, eventDate: eventDate || undefined });
+    const result = await createEvent({ name, slug, eventDate: eventDate || undefined });
     if (!result.ok) {
       setError(result.error);
       setLoading(false);
       return;
     }
-    onCreated(result.album);
+    onCreated(result.event);
   }
 
   return (
@@ -109,27 +109,27 @@ function StepBasics({ onCreated }: { onCreated: (album: CreatedAlbum) => void })
   );
 }
 
-export function AlbumCreateWizard() {
+export function EventCreateWizard() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
-  const [album, setAlbum] = useState<CreatedAlbum | null>(null);
+  const [event, setEvent] = useState<CreatedEvent | null>(null);
 
   function reset() {
     setStep(1);
-    setAlbum(null);
+    setEvent(null);
   }
 
   function close() {
     setOpen(false);
-    router.refresh(); // o álbum criado (mesmo em rascunho) já entra na lista
+    router.refresh(); // o evento criado (mesmo em rascunho) já entra na lista
     // Espera o fechamento visual antes de limpar o estado do form.
     setTimeout(reset, 200);
   }
 
   function finish() {
     setOpen(false);
-    if (album) router.push(`/admin/albums/${album.id}`);
+    if (event) router.push(`/admin/events/${event.id}`);
     setTimeout(reset, 200);
   }
 
@@ -137,25 +137,25 @@ export function AlbumCreateWizard() {
     <>
       <Button variant="accent" onClick={() => setOpen(true)}>
         <Plus className="size-4" />
-        Novo álbum
+        Novo evento
       </Button>
 
-      <Dialog open={open} onClose={close} title="Novo álbum">
+      <Dialog open={open} onClose={close} title="Novo evento">
         <StepIndicator step={step} />
 
         {step === 1 && (
           <StepBasics
             onCreated={(created) => {
-              setAlbum(created);
+              setEvent(created);
               setStep(2);
             }}
           />
         )}
 
-        {step === 2 && album && (
+        {step === 2 && event && (
           <div className="space-y-4">
-            <AlbumBrandingForm
-              album={album}
+            <EventBrandingForm
+              event={event}
               heroPreviewUrl={null}
               logoPreviewUrl={null}
               submitLabel="Salvar e continuar"
@@ -167,9 +167,9 @@ export function AlbumCreateWizard() {
           </div>
         )}
 
-        {step === 3 && album && (
+        {step === 3 && event && (
           <div className="space-y-4">
-            <AlbumDetail albumId={album.id} />
+            <EventDetail eventId={event.id} />
             <Button variant="accent" onClick={finish}>
               Concluir
             </Button>

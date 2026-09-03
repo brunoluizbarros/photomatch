@@ -36,8 +36,18 @@ const TABS: { id: Tab; label: string; icon: TabIcon; description: string }[] = [
 ];
 
 // Um único card pra adicionar fotos, com abas pra escolher a origem — upload
-// direto ou link do Drive/Dropbox — em vez de dois cards separados.
-export function AddPhotosPanel({ albumId, onDone }: { albumId: string; onDone: () => void }) {
+// direto ou link do Drive/Dropbox — em vez de dois cards separados. albumId
+// opcional: quando a galeria está filtrada por uma pasta, as fotos novas
+// nascem dentro dela.
+export function AddPhotosPanel({
+  eventId,
+  albumId,
+  onDone,
+}: {
+  eventId: string;
+  albumId?: string | null;
+  onDone: () => void;
+}) {
   const [tab, setTab] = useState<Tab>('upload');
   const active = TABS.find((t) => t.id === tab) ?? TABS[0];
 
@@ -67,9 +77,13 @@ export function AddPhotosPanel({ albumId, onDone }: { albumId: string; onDone: (
 
       <p className="text-[var(--muted-foreground)] text-sm">{active.description}</p>
 
-      {tab === 'upload' && <BulkUploader albumId={albumId} onDone={onDone} />}
-      {tab === 'drive' && <ImportFromLink albumId={albumId} provider="drive" onDone={onDone} />}
-      {tab === 'dropbox' && <ImportFromLink albumId={albumId} provider="dropbox" onDone={onDone} />}
+      {tab === 'upload' && <BulkUploader eventId={eventId} albumId={albumId} onDone={onDone} />}
+      {tab === 'drive' && (
+        <ImportFromLink eventId={eventId} albumId={albumId} provider="drive" onDone={onDone} />
+      )}
+      {tab === 'dropbox' && (
+        <ImportFromLink eventId={eventId} albumId={albumId} provider="dropbox" onDone={onDone} />
+      )}
     </Card>
   );
 }

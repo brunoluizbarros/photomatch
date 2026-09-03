@@ -20,7 +20,7 @@
 
   /* Template editorial da página pública de evento (/e/[slug]), portado do
      design do Réveillon Carneiros. Superfícies neutras fixas — a única cor
-     por evento é --event-accent, definida inline a partir de albums.primaryColor. */
+     por evento é --event-accent, definida inline a partir de events.primaryColor. */
   --event-cream: #f3eee4;
   --event-olive-deep: #2c3119;
   --event-shell: #f1ece3;
@@ -176,5 +176,42 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .event-ticker-track {
     animation: none !important;
+  }
+}
+
+/* Página de impressão (/admin/events/[id]/print). display:block no container
+   e nas folhas — não flex/grid — porque break-after é ignorado em filho de
+   flex/grid em várias engines. max-height em mm (A4 menos as margens do
+   @page), não vh: a unidade absoluta é a que se comporta no contexto de
+   impressão. */
+@page {
+  size: A4;
+  margin: 10mm;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-sheet {
+    display: block;
+    break-after: page;
+    break-inside: avoid;
+    page-break-after: always;
+  }
+
+  .print-sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .print-sheet img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 277mm;
+    object-fit: contain;
+    margin: 0 auto;
   }
 }

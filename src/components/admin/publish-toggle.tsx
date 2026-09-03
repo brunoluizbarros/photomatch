@@ -1,15 +1,15 @@
 'use client';
 
-import { setPublished } from '@/actions/albums';
+import { setPublished } from '@/actions/events';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export function PublishToggle({
-  albumId,
+  eventId,
   slug,
   initialIsPublished,
-}: { albumId: string; slug: string; initialIsPublished: boolean }) {
+}: { eventId: string; slug: string; initialIsPublished: boolean }) {
   const router = useRouter();
   const [isPublished, setIsPublished] = useState(initialIsPublished);
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ export function PublishToggle({
 
   async function toggle() {
     setLoading(true);
-    await setPublished(albumId, !isPublished);
+    await setPublished(eventId, !isPublished);
     setIsPublished(!isPublished);
     setLoading(false);
     router.refresh();

@@ -9,6 +9,10 @@ export const user = pgTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').notNull(),
   image: text('image'),
+  // 'admin' | 'photographer' | 'support' — ver src/lib/auth/require-admin.ts.
+  // Campo do better-auth (additionalFields, input:false em src/lib/auth/server.ts),
+  // não editável pelo próprio usuário via updateUser.
+  role: text('role').notNull().default('admin'),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull(),
 });

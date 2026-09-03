@@ -22,13 +22,13 @@ function ResultBadge({ label, ok }: { label: string; ok: boolean }) {
   );
 }
 
-export function AccessRequestsPanel({ albumId }: { albumId: string }) {
+export function AccessRequestsPanel({ eventId }: { eventId: string }) {
   const [requests, setRequests] = useState<Requests | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setRequests(await getAccessRequests(albumId));
-  }, [albumId]);
+    setRequests(await getAccessRequests(eventId));
+  }, [eventId]);
 
   useEffect(() => {
     load();

@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils/cn';
 import { ImagePlus } from 'lucide-react';
 import { useRef, useState } from 'react';
 
-// Campo de imagem com upload + preview — usado pra capa e logo do álbum.
+// Campo de imagem com upload + preview — usado pra capa e logo do evento.
 // Sobe o arquivo assim que é escolhido (presign + PUT direto no bucket,
 // mesmo padrão do BulkUploader) e já mostra o preview local via blob URL,
 // sem esperar o "Salvar personalização"; só o storageKey resultante entra
@@ -15,7 +15,7 @@ import { useRef, useState } from 'react';
 export function ImageUploadField({
   label,
   hint,
-  albumId,
+  eventId,
   kind,
   initialPreviewUrl,
   value,
@@ -24,7 +24,7 @@ export function ImageUploadField({
 }: {
   label: string;
   hint?: string;
-  albumId: string;
+  eventId: string;
   kind: 'hero' | 'logo';
   initialPreviewUrl: string | null;
   value: string | null;
@@ -45,7 +45,7 @@ export function ImageUploadField({
 
     try {
       const { storageKey, uploadUrl } = await requestBrandingImageUpload({
-        albumId,
+        eventId,
         kind,
         filename: file.name,
         contentType: file.type || 'application/octet-stream',

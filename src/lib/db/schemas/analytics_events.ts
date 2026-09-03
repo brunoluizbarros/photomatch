@@ -1,6 +1,6 @@
 import { createId } from '@paralleldrive/cuid2';
 import { index, integer, pgEnum, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
-import { albums } from './albums';
+import { events } from './events';
 
 export const analyticsEventTypeEnum = pgEnum('analytics_event_type', ['visit', 'search']);
 
@@ -15,9 +15,9 @@ export const analytics_events = pgTable(
       .notNull()
       .primaryKey()
       .$defaultFn(() => createId()),
-    albumId: text('album_id')
+    eventId: text('event_id')
       .notNull()
-      .references(() => albums.id, { onDelete: 'cascade' }),
+      .references(() => events.id, { onDelete: 'cascade' }),
     // Não é FK — "pessoa" não tem tabela e não vai ter.
     deviceId: text('device_id').notNull(),
     type: analyticsEventTypeEnum('type').notNull(),
@@ -26,7 +26,7 @@ export const analytics_events = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index('analytics_events_album_id_created_at_idx').on(table.albumId, table.createdAt),
+    index('analytics_events_event_id_created_at_idx').on(table.eventId, table.createdAt),
     index('analytics_events_created_at_idx').on(table.createdAt),
   ],
 );

@@ -1,6 +1,6 @@
 'use client';
 
-import { updateAlbumBranding } from '@/actions/albums';
+import { updateEventBranding } from '@/actions/events';
 import { ImageUploadField } from '@/components/admin/image-upload-field';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -105,7 +105,7 @@ function BodyPresetPicker({ value, onChange }: { value: string; onChange: (id: s
   );
 }
 
-type Album = {
+type Event = {
   id: string;
   heroImageKey: string | null;
   logoImageKey: string | null;
@@ -115,34 +115,34 @@ type Album = {
   welcomeMessage: string | null;
 };
 
-export function AlbumBrandingForm({
-  album,
+export function EventBrandingForm({
+  event,
   heroPreviewUrl,
   logoPreviewUrl,
   submitLabel = 'Salvar personalização',
   onSaved,
 }: {
-  album: Album;
+  event: Event;
   heroPreviewUrl: string | null;
   logoPreviewUrl: string | null;
   submitLabel?: string;
   onSaved?: () => void;
 }) {
   const router = useRouter();
-  const [heroImageKey, setHeroImageKey] = useState(album.heroImageKey);
-  const [logoImageKey, setLogoImageKey] = useState(album.logoImageKey);
-  const [primaryColor, setPrimaryColor] = useState(getAccentPreset(album.primaryColor).id);
-  const [fontId, setFontId] = useState(getFontPreset(album.fontId).id);
-  const [bodyColor, setBodyColor] = useState(getBodyPreset(album.bodyColor).id);
-  const [welcomeMessage, setWelcomeMessage] = useState(album.welcomeMessage ?? '');
+  const [heroImageKey, setHeroImageKey] = useState(event.heroImageKey);
+  const [logoImageKey, setLogoImageKey] = useState(event.logoImageKey);
+  const [primaryColor, setPrimaryColor] = useState(getAccentPreset(event.primaryColor).id);
+  const [fontId, setFontId] = useState(getFontPreset(event.fontId).id);
+  const [bodyColor, setBodyColor] = useState(getBodyPreset(event.bodyColor).id);
+  const [welcomeMessage, setWelcomeMessage] = useState(event.welcomeMessage ?? '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function handleSubmit(formEvent: FormEvent) {
+    formEvent.preventDefault();
     setSaving(true);
     setSaved(false);
-    await updateAlbumBranding(album.id, {
+    await updateEventBranding(event.id, {
       heroImageKey,
       logoImageKey,
       primaryColor,
@@ -179,7 +179,7 @@ export function AlbumBrandingForm({
         <ImageUploadField
           label="Foto de capa"
           hint="Sem foto, a capa usa um gradiente com a cor de destaque."
-          albumId={album.id}
+          eventId={event.id}
           kind="hero"
           aspect="wide"
           initialPreviewUrl={heroPreviewUrl}
@@ -188,7 +188,7 @@ export function AlbumBrandingForm({
         />
         <ImageUploadField
           label="Logo"
-          albumId={album.id}
+          eventId={event.id}
           kind="logo"
           aspect="square"
           initialPreviewUrl={logoPreviewUrl}

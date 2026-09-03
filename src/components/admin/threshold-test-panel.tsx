@@ -17,7 +17,7 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function ThresholdTestPanel({ albumId }: { albumId: string }) {
+export function ThresholdTestPanel({ eventId }: { eventId: string }) {
   const [matches, setMatches] = useState<Match[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export function ThresholdTestPanel({ albumId }: { albumId: string }) {
     setError(null);
     try {
       const base64 = await fileToBase64(file);
-      setMatches(await testRekognitionSearch(albumId, base64));
+      setMatches(await testRekognitionSearch(eventId, base64));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao buscar.');
     } finally {

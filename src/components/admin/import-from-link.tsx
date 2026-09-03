@@ -15,11 +15,13 @@ const PLACEHOLDERS: Record<ShareProvider, string> = {
 // Formulário de import por link, fixo pra um provedor — o AddPhotosPanel é
 // quem decide qual (aba selecionada), então aqui não existe mais toggle.
 export function ImportFromLink({
+  eventId,
   albumId,
   provider,
   onDone,
 }: {
-  albumId: string;
+  eventId: string;
+  albumId?: string | null;
   provider: ShareProvider;
   onDone: () => void;
 }) {
@@ -48,7 +50,7 @@ export function ImportFromLink({
     }
 
     setLoading(true);
-    const result = await importFromShareLink({ albumId, url });
+    const result = await importFromShareLink({ eventId, albumId, url });
     if (!result.ok) {
       setError(result.error);
     } else {

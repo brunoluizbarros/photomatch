@@ -13,24 +13,24 @@ const hasDb = !!process.env.DATABASE_URL && process.env.DATABASE_URL !== FAKE_DA
 describe.skipIf(!hasDb)('claimPhotoBatch', () => {
   it('never lets two concurrent claims return the same photo', async () => {
     const { db } = await import('@/lib/db/client');
-    const { albums, photos } = await import('@/lib/db/schemas');
+    const { events, photos } = await import('@/lib/db/schemas');
     const { claimPhotoBatch } = await import('@/lib/db/queue');
     const { createId } = await import('@paralleldrive/cuid2');
     const { eq } = await import('drizzle-orm');
 
-    const albumId = createId();
-    await db.insert(albums).values({
-      id: albumId,
+    const eventId = createId();
+    await db.insert(events).values({
+      id: eventId,
       name: 'test',
-      slug: `test-${albumId}`,
-      rekognitionCollectionId: `test-${albumId}`,
+      slug: `test-${eventId}`,
+      rekognitionCollectionId: `test-${eventId}`,
     });
 
     const photoIds = Array.from({ length: 10 }, () => createId());
     await db
       .insert(photos)
       .values(
-        photoIds.map((id) => ({ id, albumId, storageKey: `k/${id}`, status: 'pending' as const })),
+        photoIds.map((id) => ({ id, eventId, storageKey: `k/${id}`, status: 'pending' as const })),
       );
 
     try {
@@ -39,7 +39,7 @@ describe.skipIf(!hasDb)('claimPhotoBatch', () => {
       const overlap = batchB.filter((p) => idsA.has(p.id));
       expect(overlap).toHaveLength(0);
     } finally {
-      await db.delete(albums).where(eq(albums.id, albumId));
+      await db.delete(events).where(eq(events.id, eventId));
     }
   });
 });

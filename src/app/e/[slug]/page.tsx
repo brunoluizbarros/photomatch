@@ -1,4 +1,4 @@
-import { getPublishedAlbumBySlug } from '@/actions/albums';
+import { getPublishedEventBySlug } from '@/actions/events';
 import { EventHero } from '@/components/public/event-hero';
 import { SelfieSearch } from '@/components/public/selfie-search';
 import { VisitTracker } from '@/components/public/visit-tracker';
@@ -16,7 +16,7 @@ import type { CSSProperties } from 'react';
 // A superfície dia/noite depende do horário no momento do request.
 export const dynamic = 'force-dynamic';
 
-export default async function PublicAlbumPage({
+export default async function PublicEventPage({
   params,
   searchParams,
 }: {
@@ -25,23 +25,23 @@ export default async function PublicAlbumPage({
 }) {
   const { slug } = await params;
   const { theme } = await searchParams;
-  const album = await getPublishedAlbumBySlug(slug);
-  if (!album) notFound();
+  const event = await getPublishedEventBySlug(slug);
+  if (!event) notFound();
 
-  const eyebrow = album.eventDate
-    ? format(album.eventDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+  const eyebrow = event.eventDate
+    ? format(event.eventDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
     : 'Galeria do evento';
-  const welcomeMessage = album.welcomeMessage ?? 'Tire uma selfie e encontre suas fotos do evento.';
-  const accent = getAccentPreset(album.primaryColor);
-  const font = getFontPreset(album.fontId);
-  const body = getBodyPreset(album.bodyColor);
+  const welcomeMessage = event.welcomeMessage ?? 'Tire uma selfie e encontre suas fotos do evento.';
+  const accent = getAccentPreset(event.primaryColor);
+  const font = getFontPreset(event.fontId);
+  const body = getBodyPreset(event.bodyColor);
   // Um fundo de corpo customizado (não "auto") fixa a superfície clara/escura
   // certa pra esse fundo, em vez de trocar sozinha por horário — um preset
   // escuro custom com o texto do modo dia (tinta) ficaria ilegível.
   const surface = body.background ? body.mode : resolveSurface(theme);
   const [heroImageUrl, logoUrl] = await Promise.all([
-    resolveBrandingImageUrl(album.heroImageKey, album.heroImageUrl),
-    resolveBrandingImageUrl(album.logoImageKey, album.logoUrl),
+    resolveBrandingImageUrl(event.heroImageKey, event.heroImageUrl),
+    resolveBrandingImageUrl(event.logoImageKey, event.logoUrl),
   ]);
 
   return (
@@ -59,9 +59,9 @@ export default async function PublicAlbumPage({
         } as CSSProperties
       }
     >
-      <VisitTracker slug={album.slug} />
+      <VisitTracker slug={event.slug} />
       <EventHero
-        title={album.name}
+        title={event.name}
         eyebrow={eyebrow}
         heroImageUrl={heroImageUrl}
         logoUrl={logoUrl}
@@ -73,10 +73,10 @@ export default async function PublicAlbumPage({
           aria-hidden
           className="-z-10 -top-24 pointer-events-none absolute left-1/2 size-72 -translate-x-1/2 rounded-full bg-event-accent/25 blur-[90px]"
         />
-        <SelfieSearch slug={album.slug} welcomeMessage={welcomeMessage} />
+        <SelfieSearch slug={event.slug} welcomeMessage={welcomeMessage} />
         <div className="mx-auto mt-10 mb-4 h-px w-8 bg-event-line" />
         <p className="text-center text-[11px] text-event-text-mute uppercase tracking-[0.2em]">
-          {album.name}
+          {event.name}
         </p>
       </main>
     </div>

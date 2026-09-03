@@ -4,14 +4,14 @@
 // (src/lib/db/queue.ts) em vez de um broker externo.
 //
 // Baixa a foto do bucket, redimensiona só o necessário para caber no limite
-// de 5MB da API do Rekognition, indexa os rostos na Collection do álbum e
+// de 5MB da API do Rekognition, indexa os rostos na Collection do evento e
 // grava o mapeamento FaceId->foto.
 import 'dotenv/config';
 
 import { env } from '@/config/env';
 import { db } from '@/lib/db/client';
 import { type ClaimedPhoto, claimPhotoBatch, releaseFailure, releaseSuccess } from '@/lib/db/queue';
-import { albums, photo_faces, photos } from '@/lib/db/schemas';
+import { events, photo_faces, photos } from '@/lib/db/schemas';
 import { resizeToFitByteLimit } from '@/lib/image/resize';
 import { fetchRemoteImage } from '@/lib/import/fetch-remote-image';
 import { deletePhotoFaces, indexPhotoFaces } from '@/lib/rekognition/faces';
@@ -87,7 +87,7 @@ async function handlePhoto(photo: ClaimedPhoto, collectionId: string) {
       await db.insert(photo_faces).values(
         faces.map((face) => ({
           photoId: photo.id,
-          albumId: photo.albumId,
+          eventId: photo.eventId,
           rekognitionFaceId: face.faceId,
           boundingBox: face.boundingBox,
           confidence: face.confidence,
@@ -122,12 +122,12 @@ async function main() {
     }
 
     for (const photo of batch) {
-      const [album] = await db.select().from(albums).where(eq(albums.id, photo.albumId));
-      if (!album) {
-        console.warn(`Album ${photo.albumId} not found for photo ${photo.id}, skipping`);
+      const [event] = await db.select().from(events).where(eq(events.id, photo.eventId));
+      if (!event) {
+        console.warn(`Event ${photo.eventId} not found for photo ${photo.id}, skipping`);
         continue;
       }
-      await handlePhoto(photo, album.rekognitionCollectionId);
+      await handlePhoto(photo, event.rekognitionCollectionId);
     }
   }
 }

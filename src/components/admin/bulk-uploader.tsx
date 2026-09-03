@@ -27,7 +27,15 @@ async function runWithConcurrency<T>(
   await Promise.all(runners);
 }
 
-export function BulkUploader({ albumId, onDone }: { albumId: string; onDone: () => void }) {
+export function BulkUploader({
+  eventId,
+  albumId,
+  onDone,
+}: {
+  eventId: string;
+  albumId?: string | null;
+  onDone: () => void;
+}) {
   const [total, setTotal] = useState(0);
   const [done, setDone] = useState(0);
   const [failedFiles, setFailedFiles] = useState<File[]>([]);
@@ -47,6 +55,7 @@ export function BulkUploader({ albumId, onDone }: { albumId: string; onDone: () 
 
   async function uploadOneAttempt(file: File) {
     const { photoId, uploadUrl } = await requestPhotoUpload({
+      eventId,
       albumId,
       filename: file.name,
       contentType: file.type || 'application/octet-stream',

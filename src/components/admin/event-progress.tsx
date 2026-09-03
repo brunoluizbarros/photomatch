@@ -1,23 +1,23 @@
 'use client';
 
-import { getAlbumProgress } from '@/actions/albums';
+import { getEventProgress } from '@/actions/events';
 import { reindexFailedPhotos } from '@/actions/photos';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-type Progress = Awaited<ReturnType<typeof getAlbumProgress>>;
+type Progress = Awaited<ReturnType<typeof getEventProgress>>;
 
-export function AlbumProgress({ albumId, refreshKey }: { albumId: string; refreshKey: number }) {
+export function EventProgress({ eventId, refreshKey }: { eventId: string; refreshKey: number }) {
   const [progress, setProgress] = useState<Progress | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
-    const data = await getAlbumProgress(albumId);
+    const data = await getEventProgress(eventId);
     setProgress(data);
     return data;
-  }, [albumId]);
+  }, [eventId]);
 
   // refreshKey é só um gatilho para reiniciar o poll depois de um upload —
   // não é lido dentro do efeito.
@@ -65,7 +65,7 @@ export function AlbumProgress({ albumId, refreshKey }: { albumId: string; refres
           variant="outline"
           size="sm"
           onClick={async () => {
-            await reindexFailedPhotos(albumId);
+            await reindexFailedPhotos(eventId);
             load();
           }}
         >

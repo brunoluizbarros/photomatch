@@ -1,6 +1,6 @@
 import { getPresignedDownloadUrl } from '@/lib/storage/presign';
 
-// Resolve a imagem de marca (capa/logo) efetiva de um álbum: a chave do
+// Resolve a imagem de marca (capa/logo) efetiva de um evento: a chave do
 // bucket (upload feito pelo admin) tem prioridade sobre a URL legada (texto
 // colado à mão, ex. um arquivo em public/images/) — a chave vira uma
 // presigned URL fresca a cada chamada, nunca é guardada pronta no banco.
