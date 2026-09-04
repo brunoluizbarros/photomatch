@@ -55,6 +55,38 @@ export const BODY_PRESETS: BodyPreset[] = [
     background: 'linear-gradient(180deg, #2a1018 0%, #120609 100%)',
     mode: 'night',
   },
+  { id: 'branco', label: 'Branco', swatch: '#ffffff', background: '#ffffff', mode: 'day' },
+  {
+    id: 'rosa-quartzo',
+    label: 'Rosa quartzo',
+    swatch: '#f7e2dc',
+    background: '#f7e2dc',
+    mode: 'day',
+  },
+  {
+    id: 'verde-salvia',
+    label: 'Verde sálvia',
+    swatch: '#dfe6d5',
+    background: '#dfe6d5',
+    mode: 'day',
+  },
+  { id: 'azul-po', label: 'Azul pó', swatch: '#dde7ec', background: '#dde7ec', mode: 'day' },
+  { id: 'lavanda', label: 'Lavanda', swatch: '#e8e1f0', background: '#e8e1f0', mode: 'day' },
+  { id: 'preto', label: 'Preto', swatch: '#0d0d0d', background: '#0d0d0d', mode: 'night' },
+  {
+    id: 'azul-marinho',
+    label: 'Azul marinho',
+    swatch: '#0f1c3a',
+    background: '#0f1c3a',
+    mode: 'night',
+  },
+  {
+    id: 'esmeralda',
+    label: 'Esmeralda',
+    swatch: 'linear-gradient(180deg, #0b3d2e 0%, #041a13 100%)',
+    background: 'linear-gradient(180deg, #0b3d2e 0%, #041a13 100%)',
+    mode: 'night',
+  },
 ];
 
 const DEFAULT_BODY = BODY_PRESETS[0];

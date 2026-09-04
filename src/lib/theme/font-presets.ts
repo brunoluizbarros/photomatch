@@ -1,4 +1,5 @@
 import {
+  Abril_Fatface,
   Anton,
   Archivo_Black,
   Bebas_Neue,
@@ -60,6 +61,12 @@ const spaceGrotesk = Space_Grotesk({
   variable: '--font-opt-space',
   display: 'swap',
 });
+const abrilFatface = Abril_Fatface({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-opt-abril',
+  display: 'swap',
+});
 
 export type FontPreset = {
   id: string;
@@ -95,6 +102,12 @@ export const FONT_PRESETS: FontPreset[] = [
     label: 'Space Grotesk',
     variable: spaceGrotesk.variable,
     cssVar: '--font-opt-space',
+  },
+  {
+    id: 'abril',
+    label: 'Abril Fatface',
+    variable: abrilFatface.variable,
+    cssVar: '--font-opt-abril',
   },
 ];
 
