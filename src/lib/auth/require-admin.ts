@@ -13,7 +13,12 @@ export type Role = 'admin' | 'photographer' | 'support';
 export async function requireUser(...roles: Role[]) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) throw new Error('Unauthorized');
-  const role = (session.user.role as Role | undefined) ?? 'admin';
+  // Falha fechado: um role ausente nunca deve virar o papel mais
+  // privilegiado por omissão. Na prática `role` é NOT NULL DEFAULT 'admin'
+  // no banco, então toda sessão real já vem com o campo preenchido — isto
+  // é a rede de segurança para o caso em que não vier.
+  const role = session.user.role as Role | undefined;
+  if (!role) throw new Error('Unauthorized');
   if (roles.length > 0 && !roles.includes(role)) throw new Error('Forbidden');
   return { userId: session.user.id, role };
 }
