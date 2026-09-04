@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
@@ -42,13 +43,11 @@ export function QrCodeCard({ slug }: { slug: string }) {
       <h2 className="self-start font-display uppercase">QR Code</h2>
       <img src={dataUrl} alt="QR code da página pública do álbum" className="size-40 rounded-lg" />
       <p className="break-all text-[var(--muted-foreground)] text-xs">{publicUrl}</p>
-      <a
-        href={blobUrl ?? dataUrl}
-        download={`qrcode-${slug}.png`}
-        className="inline-flex h-11 items-center justify-center rounded-xl bg-[var(--primary)] px-5 font-semibold text-[var(--primary-foreground)] text-sm transition-colors hover:opacity-90"
-      >
-        Baixar QR Code
-      </a>
+      <Button asChild>
+        <a href={blobUrl ?? dataUrl} download={`qrcode-${slug}.png`}>
+          Baixar QR Code
+        </a>
+      </Button>
     </Card>
   );
 }

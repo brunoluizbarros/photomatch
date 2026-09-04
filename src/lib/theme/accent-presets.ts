@@ -11,6 +11,16 @@ export type AccentPreset = {
 };
 
 export const ACCENT_PRESETS: AccentPreset[] = [
+  // Default de evento novo — mesmo violeta da marca (src/app/globals.css
+  // --accent), portado do design system do ticketeria-techstage. Os presets
+  // abaixo continuam intactos e selecionáveis; eventos já configurados
+  // guardam o id escolhido e não mudam.
+  {
+    id: 'evena-violeta',
+    label: 'Violeta',
+    solid: '#7a1fe0',
+    gradient: 'linear-gradient(140deg, #7a1fe0 0%, #5e17ad 100%)',
+  },
   {
     id: 'clay',
     label: 'Clay',

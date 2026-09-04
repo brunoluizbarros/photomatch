@@ -1,18 +1,13 @@
 import type { Metadata } from 'next';
-import { Anton, Inter } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import type { ReactNode } from 'react';
 import './globals.css';
 
+// Única fonte da marca — corpo e exibição (títulos, CTAs, números grandes)
+// vêm do mesmo Inter, diferenciados por peso via globals.css (.font-display
+// força 800/tracking-tight). Carregada uma vez aqui em vez de duplicada por
+// rota.
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
-// Fonte de exibição da marca (títulos, CTAs, números grandes) — usada na
-// home, no admin e na página pública do evento, por isso carregada uma vez
-// aqui em vez de duplicada por rota. Só existe em peso 400 no Google Fonts.
-const anton = Anton({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-anton',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: 'PhotoMatch',
@@ -21,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${anton.variable}`}>
+    <html lang="pt-BR" className={inter.variable}>
       <body>{children}</body>
     </html>
   );

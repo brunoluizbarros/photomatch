@@ -4,26 +4,24 @@ import { type VariantProps, cva } from 'class-variance-authority';
 import type { ButtonHTMLAttributes } from 'react';
 
 const buttonVariants = cva(
-  // Sombra dura (offset sólido, sem blur) e cantos retos — mesmo motivo
-  // brutalista da página pública, aplicado aqui pros botões cheios (default/
-  // accent/destructive) saírem consistentes em todo o produto.
-  'inline-flex cursor-pointer items-center justify-center gap-2 rounded-md font-bold transition-[opacity,background-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60',
+  'inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl font-bold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60',
   {
     variants: {
       variant: {
         default:
-          'bg-[var(--primary)] text-[var(--primary-foreground)] shadow-[3px_3px_0_0_var(--foreground)] hover:opacity-90',
-        accent:
-          'bg-[var(--accent)] text-[var(--accent-foreground)] uppercase tracking-wide shadow-[3px_3px_0_0_var(--foreground)] hover:bg-[var(--accent-dark)]',
-        outline: 'border-2 border-[var(--foreground)] hover:bg-[var(--muted)]',
+          'bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-dark)]',
+        accent: 'bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-dark)]',
+        outline: 'border-2 border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--muted)]',
         ghost: 'hover:bg-[var(--muted)]',
-        destructive:
-          'bg-[var(--destructive)] text-white shadow-[3px_3px_0_0_var(--foreground)] hover:opacity-90',
+        destructive: 'bg-[var(--destructive)] text-white hover:bg-[var(--destructive-dark)]',
       },
+      // min-h em vez de h fixo: o mínimo de toque do design system (44/56px)
+      // continua garantido mesmo se o conteúdo (ícone + texto) empurrar a
+      // altura além da base.
       size: {
-        default: 'h-11 px-5 text-sm',
-        sm: 'h-9 px-3.5 text-sm',
-        lg: 'h-14 px-6 text-base',
+        default: 'min-h-11 px-5 text-sm',
+        sm: 'min-h-[44px] px-3.5 text-sm',
+        lg: 'min-h-14 px-6 text-base',
       },
     },
     defaultVariants: { variant: 'default', size: 'default' },

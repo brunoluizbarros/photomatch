@@ -60,7 +60,7 @@ function SignInForm() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[var(--primary)] to-black px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[var(--primary)] to-[var(--primary-dark)] px-4">
       <p className="mb-6 font-display text-lg text-white uppercase">
         PhotoMatch <span className="text-[var(--accent-light)]">admin</span>
       </p>

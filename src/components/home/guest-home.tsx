@@ -10,8 +10,9 @@ import { ptBR } from 'date-fns/locale';
 import { CheckCircle2, Search } from 'lucide-react';
 import { type FormEvent, useEffect, useState } from 'react';
 
-const INK = '#2a2620';
-const ORANGE = '#e8491d';
+// Mesmo valor de src/app/globals.css — ver comentário em
+// home-experience.tsx sobre por que fica duplicado aqui.
+const ACCENT = '#7a1fe0';
 
 type SearchResult = Awaited<ReturnType<typeof searchPublishedEventsByName>>[number];
 
@@ -37,7 +38,10 @@ function RequestForm({ event, onSent }: { event: SearchResult; onSent: () => voi
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 border-2 p-5" style={{ borderColor: INK }}>
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm"
+    >
       <p className="font-display text-lg uppercase">{event.name}</p>
       <div className="space-y-1">
         <Label htmlFor="guest-name">Seu nome</Label>
@@ -77,17 +81,8 @@ function RequestForm({ event, onSent }: { event: SearchResult; onSent: () => voi
         />
         Autorizo o organizador do evento a entrar em contato comigo por e-mail e WhatsApp.
       </Label>
-      {error && (
-        <p className="text-sm" style={{ color: '#b3261e' }}>
-          {error}
-        </p>
-      )}
-      <Button
-        type="submit"
-        disabled={!consented || loading}
-        className="h-11 w-full rounded-none text-white uppercase"
-        style={{ background: ORANGE }}
-      >
+      {error && <p className="text-[var(--destructive)] text-sm">{error}</p>}
+      <Button type="submit" variant="accent" disabled={!consented || loading} className="w-full">
         {loading ? 'Enviando...' : 'Pedir acesso'}
       </Button>
     </form>
@@ -114,11 +109,8 @@ export function GuestHome() {
   return (
     <div className="mx-auto max-w-lg px-5 py-10 sm:py-16">
       {sent ? (
-        <div
-          className="flex flex-col items-center gap-3 border-2 p-8 text-center"
-          style={{ borderColor: INK }}
-        >
-          <CheckCircle2 className="size-10" style={{ color: ORANGE }} />
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-sm">
+          <CheckCircle2 className="size-10" style={{ color: ACCENT }} />
           <h1 className="font-display text-xl uppercase">Pedido enviado!</h1>
           <p className="text-[14px] opacity-70">
             Assim que o organizador aprovar, você recebe o link por e-mail e WhatsApp.
@@ -137,8 +129,7 @@ export function GuestHome() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Nome do evento..."
-              className="h-12 rounded-none border-2 pl-10"
-              style={{ borderColor: INK }}
+              className="h-12 pl-10"
             />
           </div>
 
@@ -151,8 +142,7 @@ export function GuestHome() {
                   key={r.id}
                   type="button"
                   onClick={() => setSelected(r)}
-                  className="flex w-full items-center justify-between border-2 p-4 text-left transition-colors hover:bg-black/5"
-                  style={{ borderColor: INK }}
+                  className="flex w-full items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-left shadow-sm transition-colors hover:bg-[var(--muted)]"
                 >
                   <span className="font-semibold">{r.name}</span>
                   {r.eventDate && (

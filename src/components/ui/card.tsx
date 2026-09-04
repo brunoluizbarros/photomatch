@@ -5,9 +5,10 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        // Linha fina + mesmo fundo da página — igual à grade da home, sem
-        // "cartão" destacado (sem sombra, sem borda grossa).
-        'rounded-md border border-[var(--border)] bg-[var(--muted)] p-5',
+        // Cartão branco distinto do fundo de página (--surface vs
+        // --background) + sombra suave — receita do design system portado
+        // do ticketeria-techstage.
+        'rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm',
         className,
       )}
       {...props}

@@ -1,22 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  /* Paleta da marca PhotoMatch (creme/tinta/laranja queimado) — mesmas cores
-     da home e do template do evento, aplicada aqui no resto do produto
-     (admin, login) pros componentes compartilhados (Button/Card/Input)
-     saírem consistentes em todo o app, não só na página pública. */
-  --background: #fdfbf7;
-  --foreground: #2a2620;
-  --muted: #f1ece3;
-  --muted-foreground: #7a7267;
-  --border: #e3dbcb;
-  --primary: #2a2620;
-  --primary-foreground: #f3eee4;
+  /* Paleta da marca PhotoMatch — portada do design system do
+     ticketeria-techstage (docs/ui-rules.md do projeto irmão): base
+     quase-preta + acento violeta, aplicada aqui pros componentes
+     compartilhados (Button/Card/Input) saírem consistentes em todo o app,
+     não só no admin. --surface é o branco de cartão, distinto do fundo de
+     página (--background) — antes as duas superfícies eram a mesma cor de
+     propósito; o novo visual precisa delas separadas. */
+  --background: #f7f7f8;
+  --surface: #ffffff;
+  --foreground: #111827;
+  --muted: #f4f5f7;
+  --muted-foreground: #6b7280;
+  --border: #e5e7eb;
+  --primary: #111827;
+  --primary-dark: #0b0f17;
+  --primary-foreground: #ffffff;
   --destructive: #dc2626;
-  --accent: #e8491d;
-  --accent-dark: #b83712;
-  --accent-light: #f6c7b3;
-  --accent-foreground: #fdfbf7;
+  --destructive-dark: #b91c1c;
+  --accent: #7a1fe0;
+  --accent-dark: #5e17ad;
+  --accent-light: #c4b5fd;
+  --accent-foreground: #ffffff;
+  /* Reservados pra realce pontual de marca — uso restrito, não é cor de
+     ação/CTA (mesma regra do techstage: não fragmentar a paleta de
+     interação, que segue em --primary/--accent). */
+  --coral: #e2916d;
+  --coral-light: #f0c3ac;
 
   /* Template editorial da página pública de evento (/e/[slug]), portado do
      design do Réveillon Carneiros. Superfícies neutras fixas — a única cor
@@ -32,9 +43,22 @@
   /* Fonte de exibição — default do admin/home. Runtime var real (não um
      token @theme inline) porque a página do evento sobrescreve inline por
      álbum via style="--font-display:var(--font-opt-x)"; se o token fosse
-     inline, Tailwind gravaria a referência a --font-anton direto na classe
-     .font-display no build, e o override por álbum nunca seria lido. */
-  --font-display: var(--font-anton);
+     inline, Tailwind gravaria a referência direto na classe .font-display
+     no build, e o override por álbum nunca seria lido. */
+  --font-display: var(--font-inter);
+}
+
+/* Inter no peso 400 (default) fica fraco onde antes entrava o Anton — uma
+   fonte "gorda" numa única variação. Regra à parte em vez de tocar as ~46
+   ocorrências de font-display espalhadas pelo app: mesmo seletor que a
+   utility .font-display que o Tailwind gera a partir do token acima, mas
+   propriedade diferente (font-weight/letter-spacing, não font-family), então
+   as duas coexistem sem conflito de cascata.
+   ponytail: peso único global; se um título específico precisar de peso
+   menor, sobrescreve local com font-normal/font-semibold. */
+.font-display {
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 @theme inline {
@@ -76,7 +100,7 @@
 }
 
 body {
-  background: var(--muted);
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
 }

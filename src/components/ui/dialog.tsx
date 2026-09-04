@@ -45,7 +45,7 @@ export function Dialog({
         if (e.target === ref.current) onClose();
       }}
       className={cn(
-        'm-auto w-[min(44rem,calc(100vw-2rem))] rounded-md border-2 border-[var(--foreground)] bg-[var(--background)] p-0 text-[var(--foreground)] backdrop:bg-black/50',
+        'm-auto w-[min(44rem,calc(100vw-2rem))] rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-0 text-[var(--foreground)] shadow-lg backdrop:bg-black/50',
         className,
       )}
     >
@@ -55,7 +55,7 @@ export function Dialog({
           type="button"
           onClick={onClose}
           aria-label="Fechar"
-          className="cursor-pointer rounded p-1 hover:bg-[var(--muted)]"
+          className="grid size-11 cursor-pointer place-items-center rounded-lg hover:bg-[var(--muted)]"
         >
           <X className="size-5" />
         </button>

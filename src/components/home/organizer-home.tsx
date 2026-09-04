@@ -11,8 +11,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const INK = '#2a2620';
-const ORANGE = '#e8491d';
+// Mesmos valores de src/app/globals.css — ver comentário em
+// home-experience.tsx sobre por que ficam duplicados aqui.
+const INK = '#111827';
+const ACCENT = '#7a1fe0';
 
 const STEPS = [
   {
@@ -95,7 +97,7 @@ const PLANS = [
 export function OrganizerHome() {
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-5 py-10 sm:py-16">
-      <div className="border-2" style={{ borderColor: INK }}>
+      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         {/* marca + proposta */}
         <div className="grid sm:grid-cols-2">
           <div
@@ -104,7 +106,7 @@ export function OrganizerHome() {
           >
             <div
               className="grid size-16 place-items-center rounded-full border-2"
-              style={{ borderColor: ORANGE, color: ORANGE }}
+              style={{ borderColor: ACCENT, color: ACCENT }}
             >
               <ScanFace className="size-8" strokeWidth={1.5} />
             </div>
@@ -120,13 +122,13 @@ export function OrganizerHome() {
             <span
               aria-hidden
               className="absolute top-4 right-4 select-none font-display text-xl"
-              style={{ color: ORANGE }}
+              style={{ color: ACCENT }}
             >
               *
             </span>
             <h1 className="font-display text-[15vw] uppercase leading-[0.85] tracking-[-0.01em] sm:text-[72px]">
               <span className="block">Photo</span>
-              <span className="block" style={{ color: ORANGE }}>
+              <span className="block" style={{ color: ACCENT }}>
                 Match
               </span>
             </h1>
@@ -141,7 +143,7 @@ export function OrganizerHome() {
               className={cn('p-6 sm:p-8', i > 0 && 'border-t sm:border-t-0 sm:border-l')}
               style={i > 0 ? { borderColor: `${INK}26` } : undefined}
             >
-              <p className="mb-3 font-display text-2xl" style={{ color: ORANGE }}>
+              <p className="mb-3 font-display text-2xl" style={{ color: ACCENT }}>
                 {step.n}
               </p>
               <h2 className="mb-2 font-display text-lg uppercase">{step.title}</h2>
@@ -162,8 +164,8 @@ export function OrganizerHome() {
           </p>
           <Button
             asChild
-            className="h-12 rounded-full px-6 text-[13px] font-bold uppercase tracking-wide text-white hover:opacity-90"
-            style={{ background: ORANGE }}
+            variant="accent"
+            className="h-12 rounded-full px-6 text-[13px] uppercase tracking-wide"
           >
             <Link href="/admin">
               Entrar como organizador
@@ -176,7 +178,7 @@ export function OrganizerHome() {
       </div>
 
       {/* benefícios */}
-      <div className="border-2" style={{ borderColor: INK }}>
+      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <div className="border-b p-6 sm:p-8" style={{ borderColor: `${INK}26` }}>
           <h2 className="font-display text-2xl uppercase">Por que usar o PhotoMatch</h2>
         </div>
@@ -192,7 +194,7 @@ export function OrganizerHome() {
               )}
               style={{ borderColor: `${INK}26` }}
             >
-              <b.icon className="mb-3 size-6" style={{ color: ORANGE }} strokeWidth={1.5} />
+              <b.icon className="mb-3 size-6" style={{ color: ACCENT }} strokeWidth={1.5} />
               <h3 className="mb-1.5 font-display text-base uppercase">{b.title}</h3>
               <p className="text-[13px] leading-relaxed" style={{ color: `${INK}b3` }}>
                 {b.body}
@@ -203,7 +205,7 @@ export function OrganizerHome() {
       </div>
 
       {/* planos */}
-      <div className="border-2" style={{ borderColor: INK }}>
+      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <div className="border-b p-6 sm:p-8" style={{ borderColor: `${INK}26` }}>
           <h2 className="font-display text-2xl uppercase">Planos</h2>
           <p className="mt-1 text-[13px] opacity-70">Comece grátis, cresça quando precisar.</p>
@@ -219,7 +221,7 @@ export function OrganizerHome() {
               style={{
                 borderColor: `${INK}26`,
                 background: plan.highlight ? INK : 'transparent',
-                color: plan.highlight ? '#fff' : INK,
+                color: plan.highlight ? 'var(--primary-foreground)' : INK,
               }}
             >
               <h3 className="font-display text-lg uppercase">{plan.name}</h3>
@@ -230,20 +232,15 @@ export function OrganizerHome() {
               <ul className="flex-1 space-y-1.5 text-[13px]">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2">
-                    <span style={{ color: ORANGE }}>—</span>
+                    <span style={{ color: ACCENT }}>—</span>
                     {f}
                   </li>
                 ))}
               </ul>
               <Button
                 asChild
-                variant={plan.highlight ? 'default' : 'outline'}
-                className={cn('rounded-full font-bold uppercase', plan.highlight && 'text-white')}
-                style={
-                  plan.highlight
-                    ? { background: ORANGE }
-                    : { borderColor: INK, color: INK, background: 'transparent' }
-                }
+                variant={plan.highlight ? 'accent' : 'outline'}
+                className="rounded-full uppercase"
               >
                 <Link href="/admin">Começar</Link>
               </Button>
