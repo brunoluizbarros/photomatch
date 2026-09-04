@@ -3,7 +3,7 @@
 import { env } from '@/config/env';
 import { type Role, requireAdmin } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
-import { user } from '@/lib/db/schemas';
+import { account, user } from '@/lib/db/schemas';
 import { and, eq, ne, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
@@ -69,6 +69,47 @@ export async function createUser(input: {
 
   if (input.role !== 'admin') {
     await db.update(user).set({ role: input.role }).where(eq(user.email, email));
+  }
+
+  revalidatePath('/admin/users');
+  return { ok: true as const };
+}
+
+// Nome/e-mail vivem em `user`; senha vive em `account` (provider "credential"),
+// hasheada pelo próprio better-auth — hashPassword é a mesma função que o
+// login usa pra conferir (better-auth/crypto), então o resultado abre sessão
+// normalmente. password vazio/omitido = mantém a senha atual (não existe
+// fluxo de "esqueci minha senha" no app; isto é a única forma de recuperar
+// acesso de alguém que perdeu a senha).
+export async function updateUser(
+  targetUserId: string,
+  input: { name: string; email: string; password?: string },
+) {
+  await requireAdmin();
+
+  const name = input.name.trim();
+  const email = input.email.trim();
+  if (!name) return { ok: false as const, error: 'Nome é obrigatório.' };
+  if (!EMAIL_RE.test(email)) return { ok: false as const, error: 'E-mail inválido.' };
+  if (input.password && input.password.length < 8) {
+    return { ok: false as const, error: 'Senha precisa de pelo menos 8 caracteres.' };
+  }
+
+  const [taken] = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(and(eq(user.email, email), ne(user.id, targetUserId)));
+  if (taken) return { ok: false as const, error: 'Já existe um usuário com esse e-mail.' };
+
+  await db.update(user).set({ name, email }).where(eq(user.id, targetUserId));
+
+  if (input.password) {
+    const { hashPassword } = await import('better-auth/crypto');
+    const hashed = await hashPassword(input.password);
+    await db
+      .update(account)
+      .set({ password: hashed })
+      .where(and(eq(account.userId, targetUserId), eq(account.providerId, 'credential')));
   }
 
   revalidatePath('/admin/users');
