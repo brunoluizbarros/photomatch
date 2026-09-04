@@ -2,9 +2,10 @@
 
 import { requestBrandingImageUpload } from '@/actions/branding';
 import { Button } from '@/components/ui/button';
+import { Dialog } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils/cn';
-import { ImagePlus } from 'lucide-react';
+import { ImagePlus, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 // Campo de imagem com upload + preview — usado pra capa e logo do evento.
@@ -34,7 +35,12 @@ export function ImageUploadField({
   const [previewUrl, setPreviewUrl] = useState(initialPreviewUrl);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Uma classe só de tamanho, usada tanto no estado vazio quanto no
+  // preenchido — a caixa nunca muda de tamanho ao trocar de estado.
+  const boxSize = aspect === 'wide' ? 'h-16 w-28' : 'h-16 w-16';
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
@@ -76,25 +82,35 @@ export function ImageUploadField({
         onChange={(e) => handleFile(e.target.files?.[0])}
       />
       <div className="flex items-center gap-3">
-        {previewUrl ? (
-          <img
-            src={previewUrl}
-            alt=""
-            className={cn(
-              'rounded-md border border-[var(--border)] bg-[var(--muted)] object-cover',
-              aspect === 'wide' ? 'h-16 w-28' : 'h-16 w-16',
-            )}
-          />
-        ) : (
-          <div
-            className={cn(
-              'grid place-items-center rounded-md border border-[var(--border)] border-dashed text-[var(--muted-foreground)]',
-              aspect === 'wide' ? 'h-16 w-28' : 'h-16 w-16',
-            )}
-          >
-            <ImagePlus className="size-5" />
-          </div>
-        )}
+        <div className={cn('relative shrink-0', boxSize)}>
+          {previewUrl ? (
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              aria-label={`Ver ${label} em tamanho maior`}
+              className="block h-full w-full overflow-hidden rounded-md border border-[var(--border)] bg-[var(--muted)]"
+            >
+              <img src={previewUrl} alt="" className="h-full w-full object-cover" />
+            </button>
+          ) : (
+            <div className="grid h-full w-full place-items-center rounded-md border border-[var(--border)] border-dashed text-[var(--muted-foreground)]">
+              <ImagePlus className="size-5" />
+            </div>
+          )}
+          {value && !uploading && (
+            <button
+              type="button"
+              onClick={() => {
+                setPreviewUrl(null);
+                onChange(null);
+              }}
+              aria-label={`Remover ${label}`}
+              className="absolute -top-1.5 -right-1.5 grid size-5 place-items-center rounded-full bg-[var(--destructive)] text-white shadow"
+            >
+              <X className="size-3" />
+            </button>
+          )}
+        </div>
         <div className="space-y-1">
           <Button
             type="button"
@@ -105,22 +121,16 @@ export function ImageUploadField({
           >
             {uploading ? 'Enviando...' : previewUrl ? 'Trocar imagem' : 'Selecionar imagem'}
           </Button>
-          {value && !uploading && (
-            <button
-              type="button"
-              onClick={() => {
-                setPreviewUrl(null);
-                onChange(null);
-              }}
-              className="block text-[var(--muted-foreground)] text-xs underline"
-            >
-              Remover
-            </button>
-          )}
         </div>
       </div>
       {hint && !error && <p className="text-[var(--muted-foreground)] text-xs">{hint}</p>}
       {error && <p className="text-[var(--destructive)] text-xs">{error}</p>}
+
+      {previewUrl && (
+        <Dialog open={modalOpen} onClose={() => setModalOpen(false)} title={label}>
+          <img src={previewUrl} alt="" className="mx-auto max-h-[70vh] w-full object-contain" />
+        </Dialog>
+      )}
     </div>
   );
 }
