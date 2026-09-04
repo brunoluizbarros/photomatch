@@ -57,6 +57,13 @@
       "when": 1788476505407,
       "tag": "0007_add_albums_roles_uploaded_by",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788571200000,
+      "tag": "0008_photographer_permissions_album_author",
+      "breakpoints": true
     }
   ]
 }

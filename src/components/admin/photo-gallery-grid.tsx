@@ -1,11 +1,13 @@
 'use client';
 
+import { listAlbumsByEvent, movePhotosToAlbum } from '@/actions/photo-albums';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { photos } from '@/lib/db/schemas';
 import { ChevronLeft, ChevronRight, Printer, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 type Status = (typeof photos.$inferSelect)['status'];
@@ -26,7 +28,14 @@ const STATUS_VARIANT: Record<Status, 'default' | 'success' | 'warning' | 'destru
   failed: 'destructive',
 };
 
+const MOVE_SELECT_CLASS =
+  'h-9 rounded-md border border-[var(--border)] bg-transparent px-2 text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]';
+// Sentinel pra "sem álbum" — distinto de "" (reservado pro placeholder
+// desabilitado do select, senão os dois valores colidiriam).
+const NO_ALBUM_VALUE = '__none__';
+
 type GalleryPhoto = { id: string; url: string; status: Status };
+type Albums = Awaited<ReturnType<typeof listAlbumsByEvent>>;
 
 // Mesmo padrão de modal em tela cheia da página pública (selfie-search.tsx)
 // — duplicado em vez de compartilhado porque os dados aqui têm status/badge,
@@ -112,15 +121,27 @@ function PhotoModal({
 
 // eventId habilita a seleção + impressão (a página pública e o admin/[test]
 // não passam eventId e ficam sem essa barra, só a galeria de leitura).
+// canMove espelha o guard de movePhotosToAlbum (admin/fotógrafo) — atendimento
+// não vê a opção de mover, já que a action rejeitaria mesmo assim.
 export function PhotoGalleryGrid({
   photos: pagePhotos,
   eventId,
+  canMove = false,
 }: {
   photos: GalleryPhoto[];
   eventId?: string;
+  canMove?: boolean;
 }) {
+  const router = useRouter();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [albums, setAlbums] = useState<Albums | null>(null);
+  const [moving, setMoving] = useState(false);
+
+  useEffect(() => {
+    if (!eventId || !canMove) return;
+    listAlbumsByEvent(eventId).then(setAlbums);
+  }, [eventId, canMove]);
 
   function toggleSelected(id: string) {
     setSelected((prev) => {
@@ -129,6 +150,15 @@ export function PhotoGalleryGrid({
       else next.add(id);
       return next;
     });
+  }
+
+  async function handleMove(albumId: string) {
+    if (!eventId || selected.size === 0 || !albumId) return;
+    setMoving(true);
+    await movePhotosToAlbum(eventId, [...selected], albumId === NO_ALBUM_VALUE ? null : albumId);
+    setMoving(false);
+    setSelected(new Set());
+    router.refresh();
   }
 
   return (
@@ -165,9 +195,9 @@ export function PhotoGalleryGrid({
       </div>
 
       {eventId && selected.size > 0 && (
-        <div className="sticky bottom-4 z-40 mt-4 flex items-center justify-between gap-3 rounded-md border border-[var(--border)] bg-[var(--background)] p-3 shadow-lg">
+        <div className="sticky bottom-4 z-40 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--border)] bg-[var(--background)] p-3 shadow-lg">
           <span className="text-sm">{selected.size} selecionada(s)</span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setSelected(new Set())}
@@ -175,6 +205,24 @@ export function PhotoGalleryGrid({
             >
               Limpar
             </button>
+            {canMove && albums && (
+              <select
+                className={MOVE_SELECT_CLASS}
+                disabled={moving}
+                value=""
+                onChange={(e) => handleMove(e.target.value)}
+              >
+                <option value="" disabled>
+                  {moving ? 'Movendo...' : 'Mover para álbum...'}
+                </option>
+                <option value={NO_ALBUM_VALUE}>Sem álbum</option>
+                {albums.map((album) => (
+                  <option key={album.id} value={album.id}>
+                    {album.name}
+                  </option>
+                ))}
+              </select>
+            )}
             <Link
               href={`/admin/events/${eventId}/print?ids=${[...selected].join(',')}`}
               className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[var(--primary)] px-3 text-[var(--primary-foreground)] text-sm font-semibold"

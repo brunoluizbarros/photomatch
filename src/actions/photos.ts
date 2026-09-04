@@ -2,12 +2,13 @@
 
 import { ownedBy, requireUser } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
+import { eventAllowsAllPhotos } from '@/lib/db/event-scope';
 import { reindexFailedPhotos as reindexFailedPhotosInDb } from '@/lib/db/queue';
 import { events, photos } from '@/lib/db/schemas';
 import { resolveShareLink } from '@/lib/import/share-link';
 import { getPresignedDownloadUrl, getPresignedUploadUrl, headObject } from '@/lib/storage/presign';
 import { randomFilename } from '@/lib/utils/random-filename';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 const MAX_IMPORT = 1000;
@@ -116,7 +117,9 @@ export async function importFromShareLink(input: {
 
 export async function reindexFailedPhotos(eventId: string) {
   const { role, userId } = await requireUser('admin', 'photographer');
-  await reindexFailedPhotosInDb(eventId, role === 'photographer' ? userId : undefined);
+  const allowAll = role === 'photographer' && (await eventAllowsAllPhotos(eventId));
+  const ownerId = role === 'photographer' && !allowAll ? userId : undefined;
+  await reindexFailedPhotosInDb(eventId, ownerId);
   revalidatePath(`/admin/events/${eventId}`);
   revalidatePath(`/admin/events/${eventId}/photos`);
 }
@@ -132,8 +135,12 @@ export async function getEventPhotosPage(
   albumFilter?: { albumId: string | null },
 ) {
   const { role, userId } = await requireUser();
+  const allowAll = await eventAllowsAllPhotos(eventId);
 
-  const conditions = [eq(photos.eventId, eventId), ownedBy(role, userId, photos.uploadedBy)];
+  const conditions = [
+    eq(photos.eventId, eventId),
+    ownedBy(role, userId, photos.uploadedBy, allowAll),
+  ];
   if (albumFilter) {
     conditions.push(
       albumFilter.albumId === null
@@ -162,6 +169,7 @@ export async function getEventPhotosPage(
 // na querystring não deve conseguir ver/imprimir foto de outro.
 export async function getPhotosForPrint(eventId: string, photoIds: string[]) {
   const { role, userId } = await requireUser();
+  const allowAll = await eventAllowsAllPhotos(eventId);
   const rows = await db
     .select()
     .from(photos)
@@ -169,9 +177,31 @@ export async function getPhotosForPrint(eventId: string, photoIds: string[]) {
       and(
         eq(photos.eventId, eventId),
         inArray(photos.id, photoIds),
-        ownedBy(role, userId, photos.uploadedBy),
+        ownedBy(role, userId, photos.uploadedBy, allowAll),
       ),
     );
+  return Promise.all(
+    rows.map(async (photo) => ({ ...photo, url: await getPresignedDownloadUrl(photo.storageKey) })),
+  );
+}
+
+// Fotos com pelo menos um rosto que o Rekognition não conseguiu indexar
+// (qualidade baixa demais) — é o "quais fotos" por trás do aviso agregado no
+// painel de progresso (src/components/admin/event-progress.tsx).
+export async function getPhotosWithUnindexedFaces(eventId: string) {
+  const { role, userId } = await requireUser();
+  const allowAll = await eventAllowsAllPhotos(eventId);
+  const rows = await db
+    .select()
+    .from(photos)
+    .where(
+      and(
+        eq(photos.eventId, eventId),
+        gt(photos.unindexedFaceCount, 0),
+        ownedBy(role, userId, photos.uploadedBy, allowAll),
+      ),
+    )
+    .orderBy(desc(photos.unindexedFaceCount));
   return Promise.all(
     rows.map(async (photo) => ({ ...photo, url: await getPresignedDownloadUrl(photo.storageKey) })),
   );

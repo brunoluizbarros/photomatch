@@ -2,6 +2,7 @@
 
 import { ownedBy, requireAdmin, requireUser } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
+import { eventAllowsAllPhotos } from '@/lib/db/event-scope';
 import { events, photos } from '@/lib/db/schemas';
 import {
   collectionIdForEvent,
@@ -100,6 +101,29 @@ export async function setPublished(eventId: string, isPublished: boolean) {
   revalidatePath(`/admin/events/${eventId}`);
 }
 
+// Permissões de fotógrafo, por evento — default restritivo (ver
+// src/lib/db/schemas/events.ts). Duas configurações independentes: ver todas
+// as fotos do evento (em vez de só as próprias) e criar álbuns.
+export async function setPhotographersSeeAllPhotos(eventId: string, seeAllPhotos: boolean) {
+  await requireAdmin();
+  await db
+    .update(events)
+    .set({ photographersSeeAllPhotos: seeAllPhotos })
+    .where(eq(events.id, eventId));
+  revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath(`/admin/events/${eventId}/photos`);
+}
+
+export async function setPhotographersCanCreateAlbums(eventId: string, canCreate: boolean) {
+  await requireAdmin();
+  await db
+    .update(events)
+    .set({ photographersCanCreateAlbums: canCreate })
+    .where(eq(events.id, eventId));
+  revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath(`/admin/events/${eventId}/photos`);
+}
+
 // Customização da página pública /e/[slug] — template editorial portado do
 // Réveillon Carneiros. Todos os campos são opcionais: sem eles, a página cai
 // nos defaults do template (gradiente com a cor primária no lugar da foto de
@@ -144,6 +168,7 @@ export async function deleteEvent(eventId: string) {
 
 export async function getEventProgress(eventId: string) {
   const { role, userId } = await requireUser();
+  const allowAll = await eventAllowsAllPhotos(eventId);
   const rows = await db
     .select({
       status: photos.status,
@@ -151,7 +176,7 @@ export async function getEventProgress(eventId: string) {
       unindexed: sql<number>`coalesce(sum(${photos.unindexedFaceCount}), 0)::int`,
     })
     .from(photos)
-    .where(and(eq(photos.eventId, eventId), ownedBy(role, userId, photos.uploadedBy)))
+    .where(and(eq(photos.eventId, eventId), ownedBy(role, userId, photos.uploadedBy, allowAll)))
     .groupBy(photos.status);
 
   const progress = { awaiting_upload: 0, pending: 0, processing: 0, indexed: 0, failed: 0 };

@@ -2,6 +2,7 @@ import { getEvent } from '@/actions/events';
 import { AccessRequestsPanel } from '@/components/admin/access-requests-panel';
 import { AnalyticsPanel } from '@/components/admin/analytics-panel';
 import { EventBrandingForm } from '@/components/admin/event-branding-form';
+import { PhotographerPermissionsCard } from '@/components/admin/photographer-permissions-card';
 import { PublishToggle } from '@/components/admin/publish-toggle';
 import { QrCodeCard } from '@/components/admin/qr-code-card';
 import { Button } from '@/components/ui/button';
@@ -70,6 +71,11 @@ export default async function EventPage({
       {isAdmin && (
         <>
           <AnalyticsPanel days={days} eventId={event.id} basePath={`/admin/events/${event.id}`} />
+          <PhotographerPermissionsCard
+            eventId={event.id}
+            initialSeeAllPhotos={event.photographersSeeAllPhotos}
+            initialCanCreateAlbums={event.photographersCanCreateAlbums}
+          />
           <AccessRequestsPanel eventId={event.id} />
         </>
       )}

@@ -36,6 +36,12 @@ export const events = pgTable('events', {
   bodyColor: text('body_color').notNull().default('auto'),
   welcomeMessage: text('welcome_message'),
 
+  // Permissões de fotógrafo, por evento — default restritivo (false): cada
+  // fotógrafo só vê/mexe no que é dele (ver ownedBy em
+  // src/lib/auth/require-admin.ts). Admin liga por evento quando quiser.
+  photographersSeeAllPhotos: boolean('photographers_see_all_photos').notNull().default(false),
+  photographersCanCreateAlbums: boolean('photographers_can_create_albums').notNull().default(false),
+
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

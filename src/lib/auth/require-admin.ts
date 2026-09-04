@@ -28,6 +28,14 @@ export const requireAdmin = () => requireUser('admin');
 // Filtro de posse para a galeria de fotos: fotógrafo só vê o que ele mesmo
 // subiu; admin e atendimento veem tudo. `and()` do drizzle ignora
 // `undefined`, então o mesmo where serve os três papéis.
-export function ownedBy(role: Role, userId: string, uploadedByColumn: Column) {
+//
+// allowAll vem de events.photographersSeeAllPhotos (ver src/lib/db/event-
+// scope.ts) — quando o evento libera, o fotógrafo também vê tudo. Default
+// false: sem passar nada, o comportamento continua o mesmo de sempre (só
+// escopo por dono), o que importa pras ações que não são sobre visibilidade
+// (ex: confirmPhotoUploaded só pode confirmar o que o próprio fotógrafo
+// subiu, não depende dessa configuração do evento).
+export function ownedBy(role: Role, userId: string, uploadedByColumn: Column, allowAll = false) {
+  if (allowAll) return undefined;
   return role === 'photographer' ? eq(uploadedByColumn, userId) : undefined;
 }

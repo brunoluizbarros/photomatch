@@ -27,6 +27,8 @@ export default async function EventPhotosPage({
   const { role } = await requireUser();
   const event = await getEvent(id);
   if (!event) notFound();
+  const isAdmin = role === 'admin';
+  const canCreateAlbum = isAdmin || (role === 'photographer' && event.photographersCanCreateAlbums);
 
   const albumFilter =
     activeAlbum === 'all' ? undefined : { albumId: activeAlbum === 'none' ? null : activeAlbum };
@@ -57,7 +59,8 @@ export default async function EventPhotosPage({
         basePath={basePath}
         activeAlbum={activeAlbum}
         noAlbumCount={noAlbumCount}
-        isAdmin={role === 'admin'}
+        isAdmin={isAdmin}
+        canCreate={canCreateAlbum}
       />
 
       {role !== 'support' && (
@@ -67,7 +70,7 @@ export default async function EventPhotosPage({
       {pagePhotos.length === 0 ? (
         <p className="text-[var(--muted-foreground)] text-sm">Nenhuma foto nesta página.</p>
       ) : (
-        <PhotoGalleryGrid photos={pagePhotos} eventId={id} />
+        <PhotoGalleryGrid photos={pagePhotos} eventId={id} canMove={role !== 'support'} />
       )}
 
       <div className="flex items-center justify-between border-[var(--border)] border-t pt-4">

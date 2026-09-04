@@ -11,23 +11,28 @@ type Albums = Awaited<ReturnType<typeof listAlbumsByEvent>>;
 
 // Faixa de "pastas" acima da galeria de fotos do evento — filtra por álbum
 // via querystring (?album=<id>|none|all), mesmo padrão server-side de ?page=
-// já usado na página. Só o admin cria/renomeia/exclui; os três papéis podem
-// filtrar por álbum.
+// já usado na página. Os três papéis podem filtrar por álbum; quem pode
+// criar depende de canCreate (admin sempre, fotógrafo só se o evento
+// liberar — ver events.photographersCanCreateAlbums). Renomear/excluir
+// continua só admin.
 export function AlbumFilterBar({
   eventId,
   basePath,
   activeAlbum,
   noAlbumCount,
   isAdmin,
+  canCreate,
 }: {
   eventId: string;
   basePath: string;
   activeAlbum: string; // 'all' | 'none' | <albumId>
   noAlbumCount: number;
   isAdmin: boolean;
+  canCreate: boolean;
 }) {
   const router = useRouter();
   const [albums, setAlbums] = useState<Albums | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setAlbums(await listAlbumsByEvent(eventId));
@@ -40,7 +45,12 @@ export function AlbumFilterBar({
   async function handleCreate() {
     const name = window.prompt('Nome do álbum:');
     if (!name?.trim()) return;
-    await createAlbum(eventId, name.trim());
+    setError(null);
+    const result = await createAlbum(eventId, name.trim());
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
     await load();
     router.refresh();
   }
@@ -67,54 +77,61 @@ export function AlbumFilterBar({
   if (!albums) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Chip href={`${basePath}?album=all`} active={activeAlbum === 'all'} icon={Folder}>
-        Todas
-      </Chip>
-      <Chip href={`${basePath}?album=none`} active={activeAlbum === 'none'} icon={Folder}>
-        Sem álbum ({noAlbumCount})
-      </Chip>
-      {albums.map((album) => (
-        <div key={album.id} className="group relative">
-          <Chip
-            href={`${basePath}?album=${album.id}`}
-            active={activeAlbum === album.id}
-            icon={Folder}
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Chip href={`${basePath}?album=all`} active={activeAlbum === 'all'} icon={Folder}>
+          Todas
+        </Chip>
+        <Chip href={`${basePath}?album=none`} active={activeAlbum === 'none'} icon={Folder}>
+          Sem álbum ({noAlbumCount})
+        </Chip>
+        {albums.map((album) => (
+          <div
+            key={album.id}
+            className="group relative"
+            title={album.authorName ? `Criado por ${album.authorName}` : undefined}
           >
-            {album.name} ({album.photoCount})
-          </Chip>
-          {isAdmin && (
-            <span className="absolute -top-1.5 -right-1.5 hidden gap-0.5 group-hover:flex">
-              <button
-                type="button"
-                onClick={() => handleRename(album.id, album.name)}
-                className="grid size-4 place-items-center rounded-full bg-[var(--foreground)] text-[var(--background)]"
-                aria-label="Renomear álbum"
-              >
-                <Pencil className="size-2.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(album.id, album.name)}
-                className="grid size-4 place-items-center rounded-full bg-[var(--destructive)] text-white"
-                aria-label="Excluir álbum"
-              >
-                <X className="size-2.5" />
-              </button>
-            </span>
-          )}
-        </div>
-      ))}
-      {isAdmin && (
-        <button
-          type="button"
-          onClick={handleCreate}
-          className="flex items-center gap-1.5 rounded-full border border-dashed border-[var(--border)] px-3 py-1.5 text-sm text-[var(--muted-foreground)] transition-colors hover:border-[var(--foreground)]/40"
-        >
-          <Plus className="size-3.5" />
-          Novo álbum
-        </button>
-      )}
+            <Chip
+              href={`${basePath}?album=${album.id}`}
+              active={activeAlbum === album.id}
+              icon={Folder}
+            >
+              {album.name} ({album.photoCount})
+            </Chip>
+            {isAdmin && (
+              <span className="absolute -top-1.5 -right-1.5 hidden gap-0.5 group-hover:flex">
+                <button
+                  type="button"
+                  onClick={() => handleRename(album.id, album.name)}
+                  className="grid size-4 place-items-center rounded-full bg-[var(--foreground)] text-[var(--background)]"
+                  aria-label="Renomear álbum"
+                >
+                  <Pencil className="size-2.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(album.id, album.name)}
+                  className="grid size-4 place-items-center rounded-full bg-[var(--destructive)] text-white"
+                  aria-label="Excluir álbum"
+                >
+                  <X className="size-2.5" />
+                </button>
+              </span>
+            )}
+          </div>
+        ))}
+        {canCreate && (
+          <button
+            type="button"
+            onClick={handleCreate}
+            className="flex items-center gap-1.5 rounded-full border border-dashed border-[var(--border)] px-3 py-1.5 text-sm text-[var(--muted-foreground)] transition-colors hover:border-[var(--foreground)]/40"
+          >
+            <Plus className="size-3.5" />
+            Novo álbum
+          </button>
+        )}
+      </div>
+      {error && <p className="text-[var(--destructive)] text-sm">{error}</p>}
     </div>
   );
 }
