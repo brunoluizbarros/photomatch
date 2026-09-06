@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useRef, useState } from 'react';
 
-type Match = Awaited<ReturnType<typeof testRekognitionSearch>>[number];
+type Match = Extract<
+  Awaited<ReturnType<typeof testRekognitionSearch>>,
+  { ok: true }
+>['matches'][number];
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -29,7 +32,12 @@ export function ThresholdTestPanel({ eventId }: { eventId: string }) {
     setError(null);
     try {
       const base64 = await fileToBase64(file);
-      setMatches(await testRekognitionSearch(eventId, base64));
+      const result = await testRekognitionSearch(eventId, base64);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setMatches(result.matches);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao buscar.');
     } finally {

@@ -80,7 +80,14 @@ export function EventProgress({ eventId, refreshKey }: { eventId: string; refres
     };
   }, [load, refreshKey]);
 
-  if (!progress) return null;
+  if (!progress) {
+    return (
+      <Card className="space-y-3">
+        <h2 className="font-display uppercase">Progresso da indexação</h2>
+        <div className="h-6 w-2/3 animate-pulse rounded-full bg-[var(--muted)]" />
+      </Card>
+    );
+  }
 
   return (
     <Card className="space-y-3">

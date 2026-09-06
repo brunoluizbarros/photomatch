@@ -25,6 +25,7 @@ function ResultBadge({ label, ok }: { label: string; ok: boolean }) {
 export function AccessRequestsPanel({ eventId }: { eventId: string }) {
   const [requests, setRequests] = useState<Requests | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setRequests(await getAccessRequests(eventId));
@@ -34,14 +35,32 @@ export function AccessRequestsPanel({ eventId }: { eventId: string }) {
     load();
   }, [load]);
 
-  if (!requests) return null;
+  if (!requests) {
+    return (
+      <Card className="space-y-3">
+        <h2 className="font-display uppercase">Pedidos de acesso</h2>
+        <div className="h-16 animate-pulse rounded-md bg-[var(--muted)]" />
+      </Card>
+    );
+  }
 
   const pending = requests.filter((r) => r.status === 'pending');
   const decided = requests.filter((r) => r.status !== 'pending');
 
   async function handleApprove(id: string) {
     setBusyId(id);
-    await approveAccessRequest(id);
+    setNotice(null);
+    const result = await approveAccessRequest(id);
+    if (result.ok) {
+      const failures: string[] = [];
+      if (!result.emailResult.ok) failures.push('e-mail');
+      if (!result.whatsappResult.ok) failures.push('WhatsApp');
+      if (failures.length > 0) {
+        setNotice(`Aprovado, mas o envio por ${failures.join(' e ')} falhou.`);
+      }
+    } else {
+      setNotice(result.error);
+    }
     await load();
     setBusyId(null);
   }
@@ -53,11 +72,21 @@ export function AccessRequestsPanel({ eventId }: { eventId: string }) {
     setBusyId(null);
   }
 
-  if (requests.length === 0) return null;
+  if (requests.length === 0) {
+    return (
+      <Card className="space-y-1">
+        <h2 className="font-display uppercase">Pedidos de acesso</h2>
+        <p className="text-[var(--muted-foreground)] text-sm">
+          Nenhum pedido ainda. Convidados sem link aparecem aqui quando buscam o evento pelo nome.
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <Card className="space-y-4">
       <h2 className="font-display uppercase">Pedidos de acesso</h2>
+      {notice && <p className="text-[var(--destructive)] text-sm">{notice}</p>}
 
       {pending.length === 0 && (
         <p className="text-[var(--muted-foreground)] text-sm">Nenhum pedido pendente.</p>

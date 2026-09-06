@@ -64,14 +64,19 @@ export async function createAlbum(eventId: string, name: string) {
 
 export async function renameAlbum(albumId: string, eventId: string, name: string) {
   await requireAdmin();
-  await db.update(albums).set({ name }).where(eq(albums.id, albumId));
+  // Escopado ao eventId recebido — sem isso, um albumId de outro evento
+  // (colado à mão ou de uma resposta antiga em cache) seria aceito.
+  await db
+    .update(albums)
+    .set({ name })
+    .where(and(eq(albums.id, albumId), eq(albums.eventId, eventId)));
   revalidatePath(`/admin/events/${eventId}/photos`);
 }
 
 // onDelete: 'set null' na FK cuida das fotos — elas caem em "Sem álbum".
 export async function deleteAlbum(albumId: string, eventId: string) {
   await requireAdmin();
-  await db.delete(albums).where(eq(albums.id, albumId));
+  await db.delete(albums).where(and(eq(albums.id, albumId), eq(albums.eventId, eventId)));
   revalidatePath(`/admin/events/${eventId}/photos`);
 }
 
@@ -85,6 +90,17 @@ export async function movePhotosToAlbum(
   albumId: string | null,
 ) {
   const { role, userId } = await requireUser('admin', 'photographer');
+
+  // O álbum de destino precisa ser do mesmo evento — sem isso dava pra mover
+  // fotos para o álbum de outro evento (só validávamos o eventId das fotos).
+  if (albumId) {
+    const [album] = await db
+      .select({ id: albums.id })
+      .from(albums)
+      .where(and(eq(albums.id, albumId), eq(albums.eventId, eventId)));
+    if (!album) return { ok: false as const, error: 'Álbum não encontrado.' };
+  }
+
   await db
     .update(photos)
     .set({ albumId })
@@ -96,4 +112,5 @@ export async function movePhotosToAlbum(
       ),
     );
   revalidatePath(`/admin/events/${eventId}/photos`);
+  return { ok: true as const };
 }

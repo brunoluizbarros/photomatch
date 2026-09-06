@@ -64,6 +64,20 @@
       "when": 1788571200000,
       "tag": "0008_photographer_permissions_album_author",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788624151121,
+      "tag": "0009_empty_the_renegades",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788661822347,
+      "tag": "0010_ordinary_stick",
+      "breakpoints": true
     }
   ]
 }

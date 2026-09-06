@@ -48,6 +48,7 @@ export async function releaseSuccess(
     width?: number;
     height?: number;
     bytes: number;
+    previewKey: string;
   },
 ) {
   await db
@@ -62,8 +63,24 @@ export async function releaseSuccess(
       width: data.width,
       height: data.height,
       bytes: data.bytes,
+      previewKey: data.previewKey,
     })
     .where(eq(photos.id, photoId));
+}
+
+// Aba fechada entre o presign e o PUT deixa a linha órfã: o objeto nunca
+// chegou ao bucket e confirmPhotoUploaded nunca vai rodar. Sem isso a linha
+// fica em "awaiting_upload" para sempre, com os badges de progresso errados.
+// Chamado pelo worker quando o lote vem vazio — ele está ocioso mesmo.
+export async function reapAbandonedUploads() {
+  await db
+    .delete(photos)
+    .where(
+      and(
+        eq(photos.status, 'awaiting_upload'),
+        sql`${photos.createdAt} < now() - interval '1 hour'`,
+      ),
+    );
 }
 
 // attempts >= MAX_ATTEMPTS => 'failed', que funciona como a DLQ: o painel de

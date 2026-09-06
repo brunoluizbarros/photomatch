@@ -156,8 +156,16 @@ export async function getEventPhotosPage(
     db.select({ count: sql<number>`count(*)::int` }).from(photos).where(where),
   ]);
 
+  // thumbUrl (o preview marcado, 900px) alimenta o grid; url (o original)
+  // fica só pro modal em tela cheia — sem sobrecarregar 12 originais de
+  // resolução plena por página. Sem preview ainda (foto não processada),
+  // cai no original mesmo — isto é o admin, não o público.
   const withUrls = await Promise.all(
-    rows.map(async (photo) => ({ ...photo, url: await getPresignedDownloadUrl(photo.storageKey) })),
+    rows.map(async (photo) => ({
+      ...photo,
+      url: await getPresignedDownloadUrl(photo.storageKey),
+      thumbUrl: await getPresignedDownloadUrl(photo.previewKey ?? photo.storageKey),
+    })),
   );
 
   return { photos: withUrls, total: count, page, pageSize };

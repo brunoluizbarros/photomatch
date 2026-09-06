@@ -65,21 +65,34 @@ export function PhotographerPermissionsCard({
   const [seeAllPhotos, setSeeAllPhotos] = useState(initialSeeAllPhotos);
   const [canCreateAlbums, setCanCreateAlbums] = useState(initialCanCreateAlbums);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function toggleSeeAll(next: boolean) {
     setLoading(true);
-    await setPhotographersSeeAllPhotos(eventId, next);
-    setSeeAllPhotos(next);
-    setLoading(false);
-    router.refresh();
+    setError(null);
+    try {
+      await setPhotographersSeeAllPhotos(eventId, next);
+      setSeeAllPhotos(next);
+      router.refresh();
+    } catch {
+      setError('Não foi possível salvar. Tente de novo.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function toggleCreateAlbums(next: boolean) {
     setLoading(true);
-    await setPhotographersCanCreateAlbums(eventId, next);
-    setCanCreateAlbums(next);
-    setLoading(false);
-    router.refresh();
+    setError(null);
+    try {
+      await setPhotographersCanCreateAlbums(eventId, next);
+      setCanCreateAlbums(next);
+      router.refresh();
+    } catch {
+      setError('Não foi possível salvar. Tente de novo.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -100,6 +113,7 @@ export function PhotographerPermissionsCard({
         disabled={loading}
         onChange={toggleCreateAlbums}
       />
+      {error && <p className="text-[var(--destructive)] text-sm">{error}</p>}
     </Card>
   );
 }

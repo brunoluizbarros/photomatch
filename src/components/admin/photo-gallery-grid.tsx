@@ -34,7 +34,9 @@ const MOVE_SELECT_CLASS =
 // desabilitado do select, senão os dois valores colidiriam).
 const NO_ALBUM_VALUE = '__none__';
 
-type GalleryPhoto = { id: string; url: string; status: Status };
+// thumbUrl é opcional: quem chama sem passar (página pública, teste de
+// threshold) mostra o original nos dois lugares.
+type GalleryPhoto = { id: string; url: string; thumbUrl?: string; status: Status };
 type Albums = Awaited<ReturnType<typeof listAlbumsByEvent>>;
 
 // Mesmo padrão de modal em tela cheia da página pública (selfie-search.tsx)
@@ -137,6 +139,7 @@ export function PhotoGalleryGrid({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [albums, setAlbums] = useState<Albums | null>(null);
   const [moving, setMoving] = useState(false);
+  const [moveError, setMoveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!eventId || !canMove) return;
@@ -155,15 +158,24 @@ export function PhotoGalleryGrid({
   async function handleMove(albumId: string) {
     if (!eventId || selected.size === 0 || !albumId) return;
     setMoving(true);
-    await movePhotosToAlbum(eventId, [...selected], albumId === NO_ALBUM_VALUE ? null : albumId);
+    setMoveError(null);
+    const result = await movePhotosToAlbum(
+      eventId,
+      [...selected],
+      albumId === NO_ALBUM_VALUE ? null : albumId,
+    );
     setMoving(false);
+    if (!result.ok) {
+      setMoveError(result.error);
+      return;
+    }
     setSelected(new Set());
     router.refresh();
   }
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {pagePhotos.map((photo, i) => (
           <div key={photo.id} className="space-y-1.5">
             <button
@@ -172,11 +184,11 @@ export function PhotoGalleryGrid({
               className="relative block aspect-square w-full overflow-hidden rounded-md border border-[var(--border)] bg-[var(--muted)] text-left transition-opacity hover:opacity-90"
             >
               <Image
-                src={photo.url}
+                src={photo.thumbUrl ?? photo.url}
                 alt=""
                 fill
-                sizes="25vw"
-                loading="eager"
+                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                loading="lazy"
                 className="object-cover"
               />
               {eventId && (
@@ -196,7 +208,10 @@ export function PhotoGalleryGrid({
 
       {eventId && selected.size > 0 && (
         <div className="sticky bottom-4 z-40 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--border)] bg-[var(--background)] p-3 shadow-lg">
-          <span className="text-sm">{selected.size} selecionada(s)</span>
+          <span className="text-sm">
+            {selected.size} selecionada(s)
+            {moveError && <span className="ml-2 text-[var(--destructive)]">{moveError}</span>}
+          </span>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"

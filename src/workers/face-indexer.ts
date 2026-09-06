@@ -10,15 +10,22 @@ import 'dotenv/config';
 
 import { env } from '@/config/env';
 import { db } from '@/lib/db/client';
-import { type ClaimedPhoto, claimPhotoBatch, releaseFailure, releaseSuccess } from '@/lib/db/queue';
+import {
+  type ClaimedPhoto,
+  claimPhotoBatch,
+  reapAbandonedUploads,
+  releaseFailure,
+  releaseSuccess,
+} from '@/lib/db/queue';
 import { events, photo_faces, photos } from '@/lib/db/schemas';
 import { resizeToFitByteLimit } from '@/lib/image/resize';
+import { buildWatermarkedPreview } from '@/lib/image/watermark';
 import { fetchRemoteImage } from '@/lib/import/fetch-remote-image';
 import { deletePhotoFaces, indexPhotoFaces } from '@/lib/rekognition/faces';
 import { bucketName, storage } from '@/lib/storage/client';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import Bottleneck from 'bottleneck';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import sharp from 'sharp';
 
 const POLL_INTERVAL_MS = 2000;
@@ -60,7 +67,7 @@ async function loadPhotoBytes(photo: ClaimedPhoto): Promise<Buffer> {
   return body;
 }
 
-async function handlePhoto(photo: ClaimedPhoto, collectionId: string) {
+async function handlePhoto(photo: ClaimedPhoto, collectionId: string, eventName: string) {
   try {
     const original = await loadPhotoBytes(photo);
     const resized = await resizeToFitByteLimit(original);
@@ -97,12 +104,27 @@ async function handlePhoto(photo: ClaimedPhoto, collectionId: string) {
 
     const metadata = await sharp(resized).metadata();
 
+    // Preview público com marca d'água — é a ÚNICA imagem que o convidado
+    // recebe (ver src/lib/photo-search.ts). Uma foto sem preview não pode
+    // virar "indexed": cai no catch e volta pra fila.
+    const preview = await buildWatermarkedPreview(original, eventName);
+    const previewKey = `previews/${photo.eventId}/${photo.id}.jpg`;
+    await storage.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: previewKey,
+        Body: preview,
+        ContentType: 'image/jpeg',
+      }),
+    );
+
     await releaseSuccess(photo.id, {
       faceCount: faces.length,
       unindexedFaceCount: unindexedCount,
       width: metadata.width,
       height: metadata.height,
       bytes: resized.length,
+      previewKey,
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
@@ -115,20 +137,44 @@ async function main() {
   console.info(`face-indexer worker started (max ${env.REKOGNITION_MAX_TPS} req/s to Rekognition)`);
 
   while (true) {
-    const batch = await claimPhotoBatch(BATCH_SIZE);
-    if (batch.length === 0) {
+    let batch: ClaimedPhoto[];
+    try {
+      batch = await claimPhotoBatch(BATCH_SIZE);
+    } catch (err) {
+      // Soluço transitório de banco não pode matar o processo — só o
+      // próximo poll tenta de novo.
+      console.error('claimPhotoBatch failed, retrying next poll', err);
       await sleep(POLL_INTERVAL_MS);
       continue;
     }
 
-    for (const photo of batch) {
-      const [event] = await db.select().from(events).where(eq(events.id, photo.eventId));
-      if (!event) {
-        console.warn(`Event ${photo.eventId} not found for photo ${photo.id}, skipping`);
-        continue;
-      }
-      await handlePhoto(photo, event.rekognitionCollectionId);
+    if (batch.length === 0) {
+      // Worker ocioso mesmo — aproveita pra limpar uploads abandonados em
+      // vez de rodar isso num cron/serviço à parte.
+      await reapAbandonedUploads();
+      await sleep(POLL_INTERVAL_MS);
+      continue;
     }
+
+    // Um SELECT para os eventos distintos do lote (em vez de um por foto) —
+    // o lote quase sempre é do mesmo evento.
+    const eventIds = [...new Set(batch.map((photo) => photo.eventId))];
+    const eventRows = await db.select().from(events).where(inArray(events.id, eventIds));
+    const eventById = new Map(eventRows.map((event) => [event.id, event]));
+
+    // O Bottleneck já impõe o teto de TPS do Rekognition, e handlePhoto tem
+    // try/catch próprio por foto — processar o lote em paralelo não perde
+    // isolamento de falha e multiplica o throughput.
+    await Promise.all(
+      batch.map((photo) => {
+        const event = eventById.get(photo.eventId);
+        if (!event) {
+          console.warn(`Event ${photo.eventId} not found for photo ${photo.id}, skipping`);
+          return;
+        }
+        return handlePhoto(photo, event.rekognitionCollectionId, event.name);
+      }),
+    );
   }
 }
 

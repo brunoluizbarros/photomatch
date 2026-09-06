@@ -42,6 +42,10 @@ export const photos = pgTable(
     // campo. Sem status novo — a linha já nasce 'pending' e a fila existente
     // (claimPhotoBatch) pega do mesmo jeito.
     sourceUrl: text('source_url'),
+    // Derivado 900px com marca d'água do nome do evento, gerado pelo worker.
+    // É a ÚNICA imagem que o público recebe — o original nunca é presignado
+    // fora do admin. Nulo enquanto a foto não foi processada (ou reprocessada).
+    previewKey: text('preview_key'),
     width: integer('width'),
     height: integer('height'),
     bytes: integer('bytes'),

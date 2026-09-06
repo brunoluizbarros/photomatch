@@ -68,7 +68,11 @@ export default async function EventPhotosPage({
       )}
 
       {pagePhotos.length === 0 ? (
-        <p className="text-[var(--muted-foreground)] text-sm">Nenhuma foto nesta página.</p>
+        <p className="text-[var(--muted-foreground)] text-sm">
+          {total === 0
+            ? 'Nenhuma foto ainda. Suba as primeiras fotos do evento acima.'
+            : 'Nenhuma foto nesta página.'}
+        </p>
       ) : (
         <PhotoGalleryGrid photos={pagePhotos} eventId={id} canMove={role !== 'support'} />
       )}

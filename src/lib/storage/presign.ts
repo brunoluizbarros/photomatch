@@ -12,8 +12,15 @@ export async function getPresignedUploadUrl(key: string, contentType: string) {
   return getSignedUrl(storage, command, { expiresIn: PUT_URL_EXPIRES_SECONDS });
 }
 
-export async function getPresignedDownloadUrl(key: string) {
-  const command = new GetObjectCommand({ Bucket: bucketName, Key: key });
+// `<a download>` é ignorado em URL cross-origin (o presigned GET aponta pro
+// bucket, não pro app); quem força o "salvar como" em vez de abrir na aba é
+// o header que o S3 devolve, pedido aqui na própria assinatura.
+export async function getPresignedDownloadUrl(key: string, filename?: string) {
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+    ResponseContentDisposition: filename ? `attachment; filename="${filename}"` : undefined,
+  });
   return getSignedUrl(storage, command, { expiresIn: GET_URL_EXPIRES_SECONDS });
 }
 
