@@ -154,15 +154,19 @@ export async function updateEventBranding(
   revalidatePath(`/admin/events/${eventId}`);
 }
 
-// Descarte de biometria (LGPD): apaga a Collection inteira na AWS numa única
-// chamada, depois o DELETE com cascade limpa photos e photo_faces.
+// Descarte de biometria (LGPD): DELETE primeiro (com cascade em photos e
+// photo_faces), Collection na AWS por último. Se o DELETE falhar, a
+// Collection continua existindo e o evento continua funcional — a ordem
+// inversa deixaria o evento no banco apontando pra uma Collection já
+// apagada, quebrando toda busca (mesmo cuidado que createEvent já tem no
+// sentido oposto: criar a Collection antes do INSERT).
 export async function deleteEvent(eventId: string) {
   await requireAdmin();
   const [event] = await db.select().from(events).where(eq(events.id, eventId));
   if (!event) throw new Error('Event not found');
 
-  await deleteEventCollection(event.rekognitionCollectionId);
   await db.delete(events).where(eq(events.id, eventId));
+  await deleteEventCollection(event.rekognitionCollectionId);
   revalidatePath('/admin');
 }
 
