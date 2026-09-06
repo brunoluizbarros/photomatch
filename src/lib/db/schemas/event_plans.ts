@@ -20,6 +20,11 @@ export const event_plans = pgTable(
     digitalQuota: integer('digital_quota').notNull().default(0),
     printQuota: integer('print_quota').notNull().default(0),
     priceCents: integer('price_cents').notNull(),
+    // Preço avulso — cobrado por unidade quando o carrinho passa da quota
+    // DESTE plano. Por plano, não por evento: planos mais caros costumam ter
+    // avulso mais barato (ver src/lib/pricing.ts:quoteCart).
+    extraDigitalPriceCents: integer('extra_digital_price_cents').notNull().default(0),
+    extraPrintPriceCents: integer('extra_print_price_cents').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index('event_plans_event_id_idx').on(table.eventId)],

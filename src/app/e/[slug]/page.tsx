@@ -57,13 +57,7 @@ export default async function PublicEventPage({
   ]);
   // null = flag desligada: SelfieSearch nem monta o carrinho, nenhum preço
   // chega ao cliente.
-  const sales = event.salesEnabled
-    ? {
-        plans,
-        digitalUnitPriceCents: event.digitalUnitPriceCents,
-        printUnitPriceCents: event.printUnitPriceCents,
-      }
-    : null;
+  const sales = event.salesEnabled ? { plans } : null;
 
   return (
     <div

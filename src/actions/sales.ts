@@ -18,25 +18,6 @@ export async function setSalesEnabled(eventId: string, enabled: boolean) {
   revalidatePath(`/admin/events/${eventId}/plans`);
 }
 
-export async function setUnitPrices(
-  eventId: string,
-  input: { digitalUnitPriceCents: number; printUnitPriceCents: number },
-) {
-  await requireAdmin();
-  if (input.digitalUnitPriceCents < 0 || input.printUnitPriceCents < 0) {
-    return { ok: false as const, error: 'Preço não pode ser negativo.' };
-  }
-  await db
-    .update(events)
-    .set({
-      digitalUnitPriceCents: Math.trunc(input.digitalUnitPriceCents),
-      printUnitPriceCents: Math.trunc(input.printUnitPriceCents),
-    })
-    .where(eq(events.id, eventId));
-  revalidatePath(`/admin/events/${eventId}/plans`);
-  return { ok: true as const };
-}
-
 export async function listPlans(eventId: string) {
   await requireAdmin();
   return db
@@ -46,48 +27,59 @@ export async function listPlans(eventId: string) {
     .orderBy(event_plans.priceCents);
 }
 
-export async function createPlan(
-  eventId: string,
-  input: { name: string; digitalQuota: number; printQuota: number; priceCents: number },
-) {
-  await requireAdmin();
+type PlanInput = {
+  name: string;
+  digitalQuota: number;
+  printQuota: number;
+  priceCents: number;
+  extraDigitalPriceCents: number;
+  extraPrintPriceCents: number;
+};
+
+function validatePlanInput(input: PlanInput) {
   const name = input.name.trim();
   if (!name) return { ok: false as const, error: 'Nome é obrigatório.' };
-  if (input.digitalQuota < 0 || input.printQuota < 0 || input.priceCents < 0) {
+  if (
+    input.digitalQuota < 0 ||
+    input.printQuota < 0 ||
+    input.priceCents < 0 ||
+    input.extraDigitalPriceCents < 0 ||
+    input.extraPrintPriceCents < 0
+  ) {
     return { ok: false as const, error: 'Valores não podem ser negativos.' };
   }
-  const [plan] = await db
-    .insert(event_plans)
-    .values({
-      eventId,
+  return {
+    ok: true as const,
+    values: {
       name,
       digitalQuota: Math.trunc(input.digitalQuota),
       printQuota: Math.trunc(input.printQuota),
       priceCents: Math.trunc(input.priceCents),
-    })
+      extraDigitalPriceCents: Math.trunc(input.extraDigitalPriceCents),
+      extraPrintPriceCents: Math.trunc(input.extraPrintPriceCents),
+    },
+  };
+}
+
+export async function createPlan(eventId: string, input: PlanInput) {
+  await requireAdmin();
+  const validated = validatePlanInput(input);
+  if (!validated.ok) return validated;
+  const [plan] = await db
+    .insert(event_plans)
+    .values({ eventId, ...validated.values })
     .returning();
   revalidatePath(`/admin/events/${eventId}/plans`);
   return { ok: true as const, plan };
 }
 
-export async function updatePlan(
-  planId: string,
-  input: { name: string; digitalQuota: number; printQuota: number; priceCents: number },
-) {
+export async function updatePlan(planId: string, input: PlanInput) {
   await requireAdmin();
-  const name = input.name.trim();
-  if (!name) return { ok: false as const, error: 'Nome é obrigatório.' };
-  if (input.digitalQuota < 0 || input.printQuota < 0 || input.priceCents < 0) {
-    return { ok: false as const, error: 'Valores não podem ser negativos.' };
-  }
+  const validated = validatePlanInput(input);
+  if (!validated.ok) return validated;
   const [plan] = await db
     .update(event_plans)
-    .set({
-      name,
-      digitalQuota: Math.trunc(input.digitalQuota),
-      printQuota: Math.trunc(input.printQuota),
-      priceCents: Math.trunc(input.priceCents),
-    })
+    .set(validated.values)
     .where(eq(event_plans.id, planId))
     .returning();
   if (!plan) return { ok: false as const, error: 'Plano não encontrado.' };

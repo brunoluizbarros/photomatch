@@ -42,8 +42,6 @@ type Selfie = { base64: string; previewUrl: string };
 
 export type SalesConfig = {
   plans: Plan[];
-  digitalUnitPriceCents: number;
-  printUnitPriceCents: number;
 };
 
 type CartEntry = { digital: boolean; print: boolean };
@@ -377,13 +375,7 @@ export function SelfieSearch({
   // Sempre calculado (nunca null) pra não precisar de fallback nos
   // componentes — quando sales é null, CartBar/CheckoutDialog simplesmente
   // não renderizam, então os valores default (sem planos/preço) nunca aparecem.
-  const quote = quoteCart({
-    digitalCount,
-    printCount,
-    plans: sales?.plans ?? [],
-    digitalUnitPriceCents: sales?.digitalUnitPriceCents ?? 0,
-    printUnitPriceCents: sales?.printUnitPriceCents ?? 0,
-  });
+  const quote = quoteCart({ digitalCount, printCount, plans: sales?.plans ?? [] });
 
   // Totem compartilhado: se ninguém mexer por um tempo com o carrinho aberto,
   // limpa tudo sozinho — sem isso a próxima pessoa herdaria o carrinho e o

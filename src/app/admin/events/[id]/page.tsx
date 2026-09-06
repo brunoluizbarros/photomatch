@@ -90,12 +90,7 @@ export default async function EventPage({
       {isAdmin && (
         <>
           <AnalyticsPanel days={days} eventId={event.id} basePath={`/admin/events/${event.id}`} />
-          <EventSalesCard
-            eventId={event.id}
-            initialSalesEnabled={event.salesEnabled}
-            initialDigitalUnitPriceCents={event.digitalUnitPriceCents}
-            initialPrintUnitPriceCents={event.printUnitPriceCents}
-          />
+          <EventSalesCard eventId={event.id} initialSalesEnabled={event.salesEnabled} />
           <PhotographerPermissionsCard
             eventId={event.id}
             initialSeeAllPhotos={event.photographersSeeAllPhotos}

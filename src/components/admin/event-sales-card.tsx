@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  createPlan,
-  deletePlan,
-  listPlans,
-  setSalesEnabled,
-  setUnitPrices,
-  updatePlan,
-} from '@/actions/sales';
+import { createPlan, deletePlan, listPlans, setSalesEnabled, updatePlan } from '@/actions/sales';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -46,6 +39,8 @@ function PlanDialog({
   const [digitalQuota, setDigitalQuota] = useState('0');
   const [printQuota, setPrintQuota] = useState('0');
   const [price, setPrice] = useState('0,00');
+  const [extraDigitalPrice, setExtraDigitalPrice] = useState('0,00');
+  const [extraPrintPrice, setExtraPrintPrice] = useState('0,00');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,11 +51,15 @@ function PlanDialog({
       setDigitalQuota('0');
       setPrintQuota('0');
       setPrice('0,00');
+      setExtraDigitalPrice('0,00');
+      setExtraPrintPrice('0,00');
     } else {
       setName(plan.name);
       setDigitalQuota(String(plan.digitalQuota));
       setPrintQuota(String(plan.printQuota));
       setPrice(centsToReais(plan.priceCents));
+      setExtraDigitalPrice(centsToReais(plan.extraDigitalPriceCents));
+      setExtraPrintPrice(centsToReais(plan.extraPrintPriceCents));
     }
     setError(null);
   }, [plan]);
@@ -74,6 +73,8 @@ function PlanDialog({
       digitalQuota: Number.parseInt(digitalQuota, 10) || 0,
       printQuota: Number.parseInt(printQuota, 10) || 0,
       priceCents: reaisToCents(price),
+      extraDigitalPriceCents: reaisToCents(extraDigitalPrice),
+      extraPrintPriceCents: reaisToCents(extraPrintPrice),
     };
     const result =
       plan === 'new'
@@ -117,8 +118,31 @@ function PlanDialog({
           </div>
         </div>
         <div className="space-y-1">
-          <Label htmlFor="plan-price">Preço (R$)</Label>
+          <Label htmlFor="plan-price">Preço do plano (R$)</Label>
           <Input id="plan-price" value={price} onChange={(e) => setPrice(e.target.value)} />
+        </div>
+        <div className="border-[var(--border)] border-t pt-4">
+          <p className="mb-2 text-[var(--muted-foreground)] text-sm">
+            Preço avulso — cobrado por unidade quando o carrinho passa da quota deste plano.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="plan-extra-digital">Digital avulsa (R$)</Label>
+              <Input
+                id="plan-extra-digital"
+                value={extraDigitalPrice}
+                onChange={(e) => setExtraDigitalPrice(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="plan-extra-print">Impressa avulsa (R$)</Label>
+              <Input
+                id="plan-extra-print"
+                value={extraPrintPrice}
+                onChange={(e) => setExtraPrintPrice(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
         {error && <p className="text-[var(--destructive)] text-sm">{error}</p>}
         <Button type="submit" variant="accent" disabled={loading} className="w-full">
@@ -132,20 +156,12 @@ function PlanDialog({
 export function EventSalesCard({
   eventId,
   initialSalesEnabled,
-  initialDigitalUnitPriceCents,
-  initialPrintUnitPriceCents,
 }: {
   eventId: string;
   initialSalesEnabled: boolean;
-  initialDigitalUnitPriceCents: number;
-  initialPrintUnitPriceCents: number;
 }) {
   const router = useRouter();
   const [salesEnabled, setSalesEnabledState] = useState(initialSalesEnabled);
-  const [digitalPrice, setDigitalPrice] = useState(centsToReais(initialDigitalUnitPriceCents));
-  const [printPrice, setPrintPrice] = useState(centsToReais(initialPrintUnitPriceCents));
-  const [savingPrices, setSavingPrices] = useState(false);
-  const [priceError, setPriceError] = useState<string | null>(null);
   const [plans, setPlans] = useState<Plans | null>(null);
   const [editingPlan, setEditingPlan] = useState<Plan | 'new' | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -168,17 +184,6 @@ export function EventSalesCard({
     } finally {
       setToggling(false);
     }
-  }
-
-  async function savePrices() {
-    setSavingPrices(true);
-    setPriceError(null);
-    const result = await setUnitPrices(eventId, {
-      digitalUnitPriceCents: reaisToCents(digitalPrice),
-      printUnitPriceCents: reaisToCents(printPrice),
-    });
-    setSavingPrices(false);
-    if (!result.ok) setPriceError(result.error);
   }
 
   async function handleDeletePlan(plan: Plan) {
@@ -206,84 +211,56 @@ export function EventSalesCard({
       </Label>
 
       {salesEnabled && (
-        <>
-          <div className="border-[var(--border)] border-t pt-4">
-            <p className="mb-2 text-[var(--muted-foreground)] text-sm">
-              Preço avulso — cobrado por unidade quando o carrinho passa da quota do maior plano.
-            </p>
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="space-y-1">
-                <Label htmlFor="digital-price">Digital avulsa (R$)</Label>
-                <Input
-                  id="digital-price"
-                  className="w-32"
-                  value={digitalPrice}
-                  onChange={(e) => setDigitalPrice(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="print-price">Impressa avulsa (R$)</Label>
-                <Input
-                  id="print-price"
-                  className="w-32"
-                  value={printPrice}
-                  onChange={(e) => setPrintPrice(e.target.value)}
-                />
-              </div>
-              <Button onClick={savePrices} disabled={savingPrices} size="sm">
-                {savingPrices ? 'Salvando...' : 'Salvar preços'}
-              </Button>
-            </div>
-            {priceError && <p className="mt-2 text-[var(--destructive)] text-sm">{priceError}</p>}
+        <div className="border-[var(--border)] border-t pt-4">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="font-semibold text-sm">Planos</p>
+            <Button size="sm" variant="outline" onClick={() => setEditingPlan('new')}>
+              Novo plano
+            </Button>
           </div>
-
-          <div className="border-[var(--border)] border-t pt-4">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="font-semibold text-sm">Planos</p>
-              <Button size="sm" variant="outline" onClick={() => setEditingPlan('new')}>
-                Novo plano
-              </Button>
-            </div>
-            {!plans ? null : plans.length === 0 ? (
-              <p className="text-[var(--muted-foreground)] text-sm">Nenhum plano cadastrado.</p>
-            ) : (
-              <div className="space-y-2">
-                {plans.map((plan) => (
-                  <div
-                    key={plan.id}
-                    className="flex items-center justify-between rounded-lg border border-[var(--border)] p-3 text-sm"
-                  >
-                    <div>
-                      <p className="font-semibold">{plan.name}</p>
-                      <p className="text-[var(--muted-foreground)]">
-                        {plan.digitalQuota} digitais · {plan.printQuota} impressas · R${' '}
-                        {centsToReais(plan.priceCents)}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busyId === plan.id}
-                        onClick={() => setEditingPlan(plan)}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busyId === plan.id}
-                        onClick={() => handleDeletePlan(plan)}
-                      >
-                        Remover
-                      </Button>
-                    </div>
+          {!plans ? null : plans.length === 0 ? (
+            <p className="text-[var(--muted-foreground)] text-sm">Nenhum plano cadastrado.</p>
+          ) : (
+            <div className="space-y-2">
+              {plans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className="flex items-center justify-between rounded-lg border border-[var(--border)] p-3 text-sm"
+                >
+                  <div>
+                    <p className="font-semibold">{plan.name}</p>
+                    <p className="text-[var(--muted-foreground)]">
+                      {plan.digitalQuota} digitais · {plan.printQuota} impressas · R${' '}
+                      {centsToReais(plan.priceCents)}
+                    </p>
+                    <p className="text-[var(--muted-foreground)] text-xs">
+                      Avulsa: R$ {centsToReais(plan.extraDigitalPriceCents)} digital · R${' '}
+                      {centsToReais(plan.extraPrintPriceCents)} impressa
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busyId === plan.id}
+                      onClick={() => setEditingPlan(plan)}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busyId === plan.id}
+                      onClick={() => handleDeletePlan(plan)}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       <PlanDialog

@@ -46,6 +46,8 @@ export async function listPublicPlans(eventId: string) {
     digitalQuota: p.digitalQuota,
     printQuota: p.printQuota,
     priceCents: p.priceCents,
+    extraDigitalPriceCents: p.extraDigitalPriceCents,
+    extraPrintPriceCents: p.extraPrintPriceCents,
   }));
 }
 
@@ -112,13 +114,7 @@ export async function createOrder(
   const digitalCount = items.filter((i) => i.digital).length;
   const printCount = items.filter((i) => i.print).length;
   const plans = await db.select().from(event_plans).where(eq(event_plans.eventId, event.id));
-  const quote = quoteCart({
-    digitalCount,
-    printCount,
-    plans,
-    digitalUnitPriceCents: event.digitalUnitPriceCents,
-    printUnitPriceCents: event.printUnitPriceCents,
-  });
+  const quote = quoteCart({ digitalCount, printCount, plans });
   if (quote.unavailable) {
     return {
       ok: false as const,
@@ -143,8 +139,8 @@ export async function createOrder(
         planPriceCents: quote.planPriceCents,
         extraDigitalCount: quote.extraDigital,
         extraPrintCount: quote.extraPrint,
-        extraDigitalPriceCents: event.digitalUnitPriceCents,
-        extraPrintPriceCents: event.printUnitPriceCents,
+        extraDigitalPriceCents: quote.plan?.extraDigitalPriceCents ?? 0,
+        extraPrintPriceCents: quote.plan?.extraPrintPriceCents ?? 0,
         totalCents: quote.totalCents,
       })
       .returning();
