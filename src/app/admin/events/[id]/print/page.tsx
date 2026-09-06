@@ -1,11 +1,8 @@
 import { getEvent } from '@/actions/events';
 import { getPhotosForPrint } from '@/actions/photos';
 import { PrintPhotos } from '@/components/admin/print-photos';
+import { MAX_PRINT_PHOTOS } from '@/lib/print';
 import { notFound } from 'next/navigation';
-
-const MAX_PRINT_PHOTOS = 30; // ponytail: originais em resolução cheia, todos
-// rasterizados de uma vez no preview — mais que isso trava o browser. Add
-// thumbnails de impressão gerados no worker se esse teto virar problema real.
 
 export default async function EventPrintPage({
   params,

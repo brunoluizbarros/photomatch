@@ -1,4 +1,5 @@
 import { getPublishedEventBySlug } from '@/actions/events';
+import { listPublicPlans } from '@/actions/orders';
 import { EventHero } from '@/components/public/event-hero';
 import { SelfieSearch } from '@/components/public/selfie-search';
 import { VisitTracker } from '@/components/public/visit-tracker';
@@ -39,10 +40,20 @@ export default async function PublicEventPage({
   // certa pra esse fundo, em vez de trocar sozinha por horário — um preset
   // escuro custom com o texto do modo dia (tinta) ficaria ilegível.
   const surface = body.background ? body.mode : resolveSurface(theme);
-  const [heroImageUrl, logoUrl] = await Promise.all([
+  const [heroImageUrl, logoUrl, plans] = await Promise.all([
     resolveBrandingImageUrl(event.heroImageKey, event.heroImageUrl),
     resolveBrandingImageUrl(event.logoImageKey, event.logoUrl),
+    event.salesEnabled ? listPublicPlans(event.id) : Promise.resolve([]),
   ]);
+  // null = flag desligada: SelfieSearch nem monta o carrinho, nenhum preço
+  // chega ao cliente.
+  const sales = event.salesEnabled
+    ? {
+        plans,
+        digitalUnitPriceCents: event.digitalUnitPriceCents,
+        printUnitPriceCents: event.printUnitPriceCents,
+      }
+    : null;
 
   return (
     <div
@@ -73,7 +84,7 @@ export default async function PublicEventPage({
           aria-hidden
           className="-z-10 -top-24 pointer-events-none absolute left-1/2 size-72 -translate-x-1/2 rounded-full bg-event-accent/25 blur-[90px]"
         />
-        <SelfieSearch slug={event.slug} welcomeMessage={welcomeMessage} />
+        <SelfieSearch slug={event.slug} welcomeMessage={welcomeMessage} sales={sales} />
         <div className="mx-auto mt-10 mb-4 h-px w-8 bg-event-line" />
         <p className="text-center text-[11px] text-event-text-mute uppercase tracking-[0.2em]">
           {event.name}

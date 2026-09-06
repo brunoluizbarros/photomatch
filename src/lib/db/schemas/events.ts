@@ -1,6 +1,6 @@
 import { createId } from '@paralleldrive/cuid2';
 import { relations } from 'drizzle-orm';
-import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { photos } from './photos';
 
 export const events = pgTable('events', {
@@ -41,6 +41,15 @@ export const events = pgTable('events', {
   // src/lib/auth/require-admin.ts). Admin liga por evento quando quiser.
   photographersSeeAllPhotos: boolean('photographers_see_all_photos').notNull().default(false),
   photographersCanCreateAlbums: boolean('photographers_can_create_albums').notNull().default(false),
+
+  // Venda de fotos (planos/carrinho/checkout/fila de impressão) — desligada
+  // por padrão. Com a flag off, /e/[slug] se comporta exatamente como antes:
+  // nenhum preço ou plano chega ao cliente, download do preview continua
+  // grátis. Preço avulso (fora de qualquer plano) fica aqui, não em tabela
+  // própria — é propriedade do evento, não uma entidade com ciclo de vida.
+  salesEnabled: boolean('sales_enabled').notNull().default(false),
+  digitalUnitPriceCents: integer('digital_unit_price_cents').notNull().default(0),
+  printUnitPriceCents: integer('print_unit_price_cents').notNull().default(0),
 
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

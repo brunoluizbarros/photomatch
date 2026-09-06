@@ -23,4 +23,22 @@ describe('dedupeAndOrderMatches', () => {
   it('returns an empty list for no matches', () => {
     expect(dedupeAndOrderMatches([])).toEqual([]);
   });
+
+  // searchPhotosByFace (multi-selfie) apenas concatena os matches de cada
+  // selfie antes de chamar esta função uma única vez — a união deduplicada
+  // é inteiramente coberta por este caso: mesma foto aparecendo na busca de
+  // duas selfies diferentes (ex: mãe e filho na mesma foto de grupo) não
+  // duplica, e mantém a maior similaridade entre as duas buscas.
+  it('unions matches from multiple selfies without duplicating photos', () => {
+    const selfie1Matches = [
+      { photoId: 'group-photo', similarity: 85 },
+      { photoId: 'only-in-selfie-1', similarity: 92 },
+    ];
+    const selfie2Matches = [
+      { photoId: 'group-photo', similarity: 97 },
+      { photoId: 'only-in-selfie-2', similarity: 88 },
+    ];
+    const result = dedupeAndOrderMatches([...selfie1Matches, ...selfie2Matches]);
+    expect(result).toEqual(['group-photo', 'only-in-selfie-1', 'only-in-selfie-2']);
+  });
 });

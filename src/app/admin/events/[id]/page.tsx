@@ -2,13 +2,14 @@ import { getEvent } from '@/actions/events';
 import { AccessRequestsPanel } from '@/components/admin/access-requests-panel';
 import { AnalyticsPanel } from '@/components/admin/analytics-panel';
 import { EventBrandingForm } from '@/components/admin/event-branding-form';
+import { EventSalesCard } from '@/components/admin/event-sales-card';
 import { PhotographerPermissionsCard } from '@/components/admin/photographer-permissions-card';
 import { PublishToggle } from '@/components/admin/publish-toggle';
 import { QrCodeCard } from '@/components/admin/qr-code-card';
 import { Button } from '@/components/ui/button';
 import { requireUser } from '@/lib/auth/require-admin';
 import { resolveBrandingImageUrl } from '@/lib/branding-image';
-import { Images, ScanFace } from 'lucide-react';
+import { Images, Printer, ReceiptText, ScanFace } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -66,11 +67,33 @@ export default async function EventPage({
             </Link>
           </Button>
         )}
+        {isAdmin && event.salesEnabled && (
+          <>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/admin/events/${event.id}/orders`}>
+                <ReceiptText className="size-4" />
+                Pedidos
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/admin/events/${event.id}/print-queue`}>
+                <Printer className="size-4" />
+                Fila de impressão
+              </Link>
+            </Button>
+          </>
+        )}
       </div>
 
       {isAdmin && (
         <>
           <AnalyticsPanel days={days} eventId={event.id} basePath={`/admin/events/${event.id}`} />
+          <EventSalesCard
+            eventId={event.id}
+            initialSalesEnabled={event.salesEnabled}
+            initialDigitalUnitPriceCents={event.digitalUnitPriceCents}
+            initialPrintUnitPriceCents={event.printUnitPriceCents}
+          />
           <PhotographerPermissionsCard
             eventId={event.id}
             initialSeeAllPhotos={event.photographersSeeAllPhotos}
