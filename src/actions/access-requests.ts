@@ -29,7 +29,13 @@ export async function searchPublishedEventsByName(query: string) {
   const trimmed = query.trim();
   if (trimmed.length < 2) return [];
   return db
-    .select({ id: events.id, name: events.name, slug: events.slug, eventDate: events.eventDate })
+    .select({
+      id: events.id,
+      name: events.name,
+      slug: events.slug,
+      eventDate: events.eventDate,
+      isPublic: events.isPublic,
+    })
     .from(events)
     .where(and(eq(events.isPublished, true), ilike(events.name, `%${trimmed}%`)))
     .limit(10);

@@ -78,6 +78,13 @@
       "when": 1788661822347,
       "tag": "0010_ordinary_stick",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788664958963,
+      "tag": "0011_fair_frightful_four",
+      "breakpoints": true
     }
   ]
 }

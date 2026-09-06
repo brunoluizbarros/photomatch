@@ -137,21 +137,38 @@ export function GuestHome() {
             <RequestForm event={selected} onSent={() => setSent(true)} />
           ) : (
             <div className="space-y-2">
-              {results.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => setSelected(r)}
-                  className="flex w-full items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-left shadow-sm transition-colors hover:bg-[var(--muted)]"
-                >
-                  <span className="font-semibold">{r.name}</span>
-                  {r.eventDate && (
-                    <span className="text-[12px] opacity-60">
-                      {format(r.eventDate, "dd 'de' MMM 'de' yyyy", { locale: ptBR })}
-                    </span>
-                  )}
-                </button>
-              ))}
+              {results.map((r) =>
+                r.isPublic ? (
+                  // Público: sem pedido de acesso — vai direto pra seleção de
+                  // fotos e carrinho. Contato só é pedido no checkout.
+                  <a
+                    key={r.id}
+                    href={`/e/${r.slug}`}
+                    className="flex w-full items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-left shadow-sm transition-colors hover:bg-[var(--muted)]"
+                  >
+                    <span className="font-semibold">{r.name}</span>
+                    {r.eventDate && (
+                      <span className="text-[12px] opacity-60">
+                        {format(r.eventDate, "dd 'de' MMM 'de' yyyy", { locale: ptBR })}
+                      </span>
+                    )}
+                  </a>
+                ) : (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setSelected(r)}
+                    className="flex w-full items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-left shadow-sm transition-colors hover:bg-[var(--muted)]"
+                  >
+                    <span className="font-semibold">{r.name}</span>
+                    {r.eventDate && (
+                      <span className="text-[12px] opacity-60">
+                        {format(r.eventDate, "dd 'de' MMM 'de' yyyy", { locale: ptBR })}
+                      </span>
+                    )}
+                  </button>
+                ),
+              )}
               {query.trim().length >= 2 && results.length === 0 && (
                 <p className="text-[13px] opacity-60">Nenhum evento encontrado com esse nome.</p>
               )}

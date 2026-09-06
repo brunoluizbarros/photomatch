@@ -3,6 +3,7 @@ import { AccessRequestsPanel } from '@/components/admin/access-requests-panel';
 import { AnalyticsPanel } from '@/components/admin/analytics-panel';
 import { EventBrandingForm } from '@/components/admin/event-branding-form';
 import { EventSalesCard } from '@/components/admin/event-sales-card';
+import { EventVisibilityToggle } from '@/components/admin/event-visibility-toggle';
 import { PhotographerPermissionsCard } from '@/components/admin/photographer-permissions-card';
 import { PublishToggle } from '@/components/admin/publish-toggle';
 import { QrCodeCard } from '@/components/admin/qr-code-card';
@@ -51,6 +52,7 @@ export default async function EventPage({
           initialIsPublished={event.isPublished}
         />
       )}
+      {isAdmin && <EventVisibilityToggle eventId={event.id} initialIsPublic={event.isPublic} />}
 
       <div className="flex flex-wrap gap-3">
         <Button asChild variant="outline" size="sm">

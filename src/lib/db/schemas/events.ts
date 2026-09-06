@@ -12,6 +12,14 @@ export const events = pgTable('events', {
   slug: text('slug').notNull().unique(),
   eventDate: timestamp('event_date', { withTimezone: true }),
   isPublished: boolean('is_published').notNull().default(false),
+  // Descoberta na home pública: convidado busca o evento pelo nome
+  // (src/components/home/guest-home.tsx). Público (default false, mesmo
+  // comportamento de hoje para eventos existentes): clicar no resultado leva
+  // direto pra /e/[slug] — seleciona fotos, cai no carrinho, dados de
+  // contato só são pedidos no checkout. Privado: mantém o fluxo de pedido de
+  // acesso — o convidado preenche contato, o organizador aprova manualmente
+  // e o link é enviado por e-mail/WhatsApp (src/actions/access-requests.ts).
+  isPublic: boolean('is_public').notNull().default(false),
   // ID da Rekognition Collection dedicada a este evento (uma coleção por evento).
   rekognitionCollectionId: text('rekognition_collection_id').notNull().unique(),
 

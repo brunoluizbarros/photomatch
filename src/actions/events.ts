@@ -101,6 +101,15 @@ export async function setPublished(eventId: string, isPublished: boolean) {
   revalidatePath(`/admin/events/${eventId}`);
 }
 
+// Só afeta a DESCOBERTA na busca da home (guest-home.tsx) — não altera nada
+// em /e/[slug] em si. Público: resultado da busca leva direto pro evento.
+// Privado: mantém o pedido de acesso + aprovação manual de hoje.
+export async function setEventPublic(eventId: string, isPublic: boolean) {
+  await requireAdmin();
+  await db.update(events).set({ isPublic }).where(eq(events.id, eventId));
+  revalidatePath(`/admin/events/${eventId}`);
+}
+
 // Permissões de fotógrafo, por evento — default restritivo (ver
 // src/lib/db/schemas/events.ts). Duas configurações independentes: ver todas
 // as fotos do evento (em vez de só as próprias) e criar álbuns.
