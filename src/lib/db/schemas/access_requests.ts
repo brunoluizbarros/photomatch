@@ -28,6 +28,11 @@ export const access_requests = pgTable(
     // de mandar WhatsApp (ver src/lib/utils/phone.ts).
     phone: text('phone').notNull(),
     status: accessRequestStatusEnum('status').notNull().default('pending'),
+    // Gerado só na aprovação (nulo enquanto pending/rejected) — é o que
+    // efetivamente libera /e/[slug] quando o evento é privado (events.isPublic
+    // = false). Enviado no link de e-mail/WhatsApp, nunca reaproveitado de
+    // outro campo.
+    token: text('token').unique(),
     emailSentAt: timestamp('email_sent_at', { withTimezone: true }),
     whatsappSentAt: timestamp('whatsapp_sent_at', { withTimezone: true }),
     respondedAt: timestamp('responded_at', { withTimezone: true }),

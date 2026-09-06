@@ -1,5 +1,6 @@
 'use server';
 
+import { randomBytes } from 'node:crypto';
 import { env } from '@/config/env';
 import { requireAdmin } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
@@ -122,7 +123,12 @@ export async function approveAccessRequest(id: string) {
   const [event] = await db.select().from(events).where(eq(events.id, request.eventId));
   if (!event) return { ok: false as const, error: 'Evento não encontrado.' };
 
-  const link = `${env.NEXT_PUBLIC_APP_URL}/e/${event.slug}`;
+  // Token pessoal do convidado — evento privado (isPublic=false) exige esse
+  // token em /e/[slug]?t=... (ver hasApprovedEventAccess). Evento público não
+  // usa o token pra nada (o link já funciona sem ele), mas gerar sempre
+  // mantém uma única regra de aprovação, sem ramo especial por visibilidade.
+  const token = randomBytes(32).toString('base64url');
+  const link = `${env.NEXT_PUBLIC_APP_URL}/e/${event.slug}?t=${token}`;
   const safeEventName = escapeHtml(event.name);
   const emailResult = await sendEmail({
     to: [request.email],
@@ -141,6 +147,7 @@ export async function approveAccessRequest(id: string) {
     .update(access_requests)
     .set({
       status: 'approved',
+      token,
       respondedAt: new Date(),
       emailSentAt: emailResult.ok ? new Date() : null,
       whatsappSentAt: whatsappResult.ok ? new Date() : null,
@@ -149,6 +156,41 @@ export async function approveAccessRequest(id: string) {
 
   revalidatePath(`/admin/events/${event.id}`);
   return { ok: true as const, emailResult, whatsappResult };
+}
+
+// Gate de /e/[slug] pra evento privado (events.isPublic=false) — token só
+// existe em pedidos aprovados (ver approveAccessRequest), então a checagem
+// de status é redundante com a de token não-nulo, mas explícita mesmo assim:
+// não é um detalhe pra confiar em "token presente" sozinho se o schema mudar.
+export async function hasApprovedEventAccess(eventId: string, token: string) {
+  const ip = await getClientIp();
+  if (isRateLimited(`event-access:${ip}`, 30, 60_000)) return false;
+  if (!token) return false;
+
+  const [request] = await db
+    .select({ id: access_requests.id })
+    .from(access_requests)
+    .where(
+      and(
+        eq(access_requests.eventId, eventId),
+        eq(access_requests.token, token),
+        eq(access_requests.status, 'approved'),
+      ),
+    );
+  return !!request;
+}
+
+// Guarda única, chamada por TODA action pública que opera num evento (busca
+// por selfie, download, checkout) — não só pela página. Server Actions são
+// endpoints de rede chamáveis direto, então gatear só a renderização da
+// página deixaria busca/download/compra de um evento privado abertos pra
+// quem soubesse o slug, sem precisar do link aprovado.
+export async function canAccessEvent(
+  event: { id: string; isPublic: boolean },
+  accessToken: string | null,
+) {
+  if (event.isPublic) return true;
+  return accessToken ? hasApprovedEventAccess(event.id, accessToken) : false;
 }
 
 export async function rejectAccessRequest(id: string) {

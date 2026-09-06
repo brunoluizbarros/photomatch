@@ -1,5 +1,6 @@
 'use server';
 
+import { canAccessEvent } from '@/actions/access-requests';
 import { db } from '@/lib/db/client';
 import { events, analytics_events, photos } from '@/lib/db/schemas';
 import { NoFaceDetectedError, searchPhotosByFace } from '@/lib/photo-search';
@@ -40,10 +41,17 @@ async function getPublishedEventBySlug(slug: string) {
 // selfiesBase64: 1+ selfies da mesma busca (grupo/família) — os resultados
 // são a união deduplicada dos matches de todas elas (ver searchPhotosByFace).
 // O rate limit por IP conta 1 busca, não 1 por selfie.
+//
+// accessToken: token pessoal enviado na aprovação do pedido de acesso (ver
+// src/actions/access-requests.ts) — obrigatório quando o evento é privado.
+// Checado aqui, não só na renderização de /e/[slug]: esta Server Action é um
+// endpoint de rede chamável direto, então gatear só a página deixaria a
+// busca aberta pra quem soubesse o slug.
 export async function searchPhotosBySelfiePublic(
   slug: string,
   selfiesBase64: string[],
   deviceId: string,
+  accessToken: string | null = null,
 ) {
   const ip = await getClientIp();
   if (isRateLimited(`public-search:${ip}`, MAX_SEARCHES_PER_WINDOW, RATE_LIMIT_WINDOW_MS)) {
@@ -60,6 +68,9 @@ export async function searchPhotosBySelfiePublic(
 
   const event = await getPublishedEventBySlug(slug);
   if (!event) return { ok: false as const, error: 'Evento não encontrado.' };
+  if (!(await canAccessEvent(event, accessToken))) {
+    return { ok: false as const, error: 'Evento não encontrado.' };
+  }
 
   let results: Awaited<ReturnType<typeof searchPhotosByFace>>;
   try {
@@ -94,7 +105,11 @@ export async function searchPhotosBySelfiePublic(
 // Com venda ligada este download grátis do preview é desativado — senão
 // ninguém compra. Nesse caso a entrega passa a ser via pedido pago (ver
 // src/actions/orders.ts:getOrderPhotoDownloadUrl, que assina o original).
-export async function getPhotoDownloadUrl(slug: string, photoId: string) {
+export async function getPhotoDownloadUrl(
+  slug: string,
+  photoId: string,
+  accessToken: string | null = null,
+) {
   const ip = await getClientIp();
   if (isRateLimited(`public-search:${ip}`, MAX_SEARCHES_PER_WINDOW, RATE_LIMIT_WINDOW_MS)) {
     return { ok: false as const, error: 'Muitas tentativas. Espere um minuto e tente de novo.' };
@@ -102,6 +117,9 @@ export async function getPhotoDownloadUrl(slug: string, photoId: string) {
 
   const event = await getPublishedEventBySlug(slug);
   if (!event) return { ok: false as const, error: 'Evento não encontrado.' };
+  if (!(await canAccessEvent(event, accessToken))) {
+    return { ok: false as const, error: 'Evento não encontrado.' };
+  }
   if (event.salesEnabled) {
     return { ok: false as const, error: 'O download avulso está desativado. Monte seu pedido.' };
   }

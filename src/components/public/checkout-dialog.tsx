@@ -16,6 +16,7 @@ function centsToBRL(cents: number) {
 export function CheckoutDialog({
   open,
   slug,
+  accessToken,
   items,
   quote,
   onClose,
@@ -23,6 +24,7 @@ export function CheckoutDialog({
 }: {
   open: boolean;
   slug: string;
+  accessToken: string | null;
   items: CartItemInput[];
   quote: Quote;
   onClose: () => void;
@@ -40,7 +42,12 @@ export function CheckoutDialog({
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const result = await createOrder(slug, items, { name, email, phone, marketingOptIn });
+    const result = await createOrder(
+      slug,
+      items,
+      { name, email, phone, marketingOptIn },
+      accessToken,
+    );
     setLoading(false);
     if (!result.ok) {
       setError(result.error);

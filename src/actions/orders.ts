@@ -1,6 +1,7 @@
 'use server';
 
 import { randomBytes } from 'node:crypto';
+import { canAccessEvent } from '@/actions/access-requests';
 import { db } from '@/lib/db/client';
 import { events, event_plans, order_items, orders, photos } from '@/lib/db/schemas';
 import { quoteCart } from '@/lib/pricing';
@@ -53,10 +54,16 @@ export type CartItemInput = { photoId: string; digital: boolean; print: boolean 
 // Cria o pedido. Preço nunca vem do cliente: só {photoId, digital, print}
 // atravessam a rede — o total é recalculado aqui com quoteCart a partir dos
 // planos e preços avulsos lidos do evento.
+//
+// accessToken: obrigatório quando o evento é privado (ver
+// src/actions/access-requests.ts:canAccessEvent) — sem isso, quem soubesse o
+// slug de um evento privado com venda ligada poderia comprar fotos que nunca
+// teve acesso aprovado pra ver.
 export async function createOrder(
   slug: string,
   items: CartItemInput[],
   buyer: { name: string; email: string; phone: string; marketingOptIn: boolean },
+  accessToken: string | null = null,
 ) {
   const ip = await getClientIp();
   if (isRateLimited(`public-order:${ip}`, 5, RATE_LIMIT_WINDOW_MS)) {
@@ -84,6 +91,9 @@ export async function createOrder(
 
   const event = await getSellableEventBySlug(slug);
   if (!event) return { ok: false as const, error: 'Evento não encontrado.' };
+  if (!(await canAccessEvent(event, accessToken))) {
+    return { ok: false as const, error: 'Evento não encontrado.' };
+  }
 
   // Toda foto tem que pertencer a ESTE evento e já ter preview (mesma guarda
   // da busca pública) — sem isso alguém posta ids de outro evento e compra

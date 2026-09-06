@@ -1,3 +1,4 @@
+import { hasApprovedEventAccess } from '@/actions/access-requests';
 import { getPublishedEventBySlug } from '@/actions/events';
 import { listPublicPlans } from '@/actions/orders';
 import { EventHero } from '@/components/public/event-hero';
@@ -22,12 +23,21 @@ export default async function PublicEventPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ theme?: string }>;
+  searchParams: Promise<{ theme?: string; t?: string }>;
 }) {
   const { slug } = await params;
-  const { theme } = await searchParams;
+  const { theme, t } = await searchParams;
   const event = await getPublishedEventBySlug(slug);
   if (!event) notFound();
+
+  // Evento privado (isPublic=false): só entra com o token pessoal enviado na
+  // aprovação do pedido de acesso (ver src/actions/access-requests.ts). Nunca
+  // distingue "evento não existe" de "token errado" — os dois caem em
+  // notFound(), pra não confirmar a um estranho que o slug existe.
+  if (!event.isPublic) {
+    const hasAccess = t ? await hasApprovedEventAccess(event.id, t) : false;
+    if (!hasAccess) notFound();
+  }
 
   const eyebrow = event.eventDate
     ? format(event.eventDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
@@ -84,7 +94,12 @@ export default async function PublicEventPage({
           aria-hidden
           className="-z-10 -top-24 pointer-events-none absolute left-1/2 size-72 -translate-x-1/2 rounded-full bg-event-accent/25 blur-[90px]"
         />
-        <SelfieSearch slug={event.slug} welcomeMessage={welcomeMessage} sales={sales} />
+        <SelfieSearch
+          slug={event.slug}
+          welcomeMessage={welcomeMessage}
+          sales={sales}
+          accessToken={t ?? null}
+        />
         <div className="mx-auto mt-10 mb-4 h-px w-8 bg-event-line" />
         <p className="text-center text-[11px] text-event-text-mute uppercase tracking-[0.2em]">
           {event.name}

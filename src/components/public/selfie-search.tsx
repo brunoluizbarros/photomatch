@@ -103,6 +103,7 @@ function StepDots({ step }: { step: Step }) {
 // teclado (ou os botões) andam entre as fotos do resultado.
 function PhotoModal({
   slug,
+  accessToken,
   photos,
   index,
   sales,
@@ -112,6 +113,7 @@ function PhotoModal({
   onNavigate,
 }: {
   slug: string;
+  accessToken: string | null;
   photos: Result;
   index: number;
   sales: SalesConfig | null;
@@ -143,7 +145,7 @@ function PhotoModal({
   async function handleDownload() {
     setDownloading(true);
     try {
-      const result = await getPhotoDownloadUrl(slug, photos[index].id);
+      const result = await getPhotoDownloadUrl(slug, photos[index].id, accessToken);
       if (result.ok) window.location.assign(result.url);
     } finally {
       setDownloading(false);
@@ -264,10 +266,17 @@ export function SelfieSearch({
   slug,
   welcomeMessage,
   sales = null,
+  accessToken = null,
 }: {
   slug: string;
   welcomeMessage: string;
   sales?: SalesConfig | null;
+  // Token pessoal do link enviado na aprovação de pedido de acesso — só
+  // existe (e só é necessário) pra evento privado (events.isPublic=false).
+  // Repassado em toda action que toca o evento (busca, download, checkout):
+  // são endpoints de rede chamáveis direto, não só gateados pela renderização
+  // da página (ver src/app/e/[slug]/page.tsx e src/actions/access-requests.ts).
+  accessToken?: string | null;
 }) {
   const [step, setStep] = useState<Step>('consent');
   const [consented, setConsented] = useState(false);
@@ -308,6 +317,7 @@ export function SelfieSearch({
         slug,
         selfies.map((s) => s.base64),
         getDeviceId(),
+        accessToken,
       );
       if (!found.ok) {
         setError(found.error);
@@ -643,6 +653,7 @@ export function SelfieSearch({
       {selectedIndex !== null && (
         <PhotoModal
           slug={slug}
+          accessToken={accessToken}
           photos={results}
           index={selectedIndex}
           sales={sales}
@@ -657,6 +668,7 @@ export function SelfieSearch({
         <CheckoutDialog
           open={checkoutOpen}
           slug={slug}
+          accessToken={accessToken}
           items={cartItems}
           quote={quote}
           onClose={() => setCheckoutOpen(false)}

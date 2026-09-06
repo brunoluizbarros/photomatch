@@ -17,6 +17,7 @@
     "create-user": "tsx scripts/create-admin.ts",
     "import-photos": "tsx scripts/import-photos.ts",
     "backfill-previews": "tsx scripts/backfill-previews.ts",
+    "backfill-public-events": "tsx scripts/backfill-public-events.ts",
     "worker:face-indexer": "tsx src/workers/face-indexer.ts",
     "test": "vitest run"
   },
