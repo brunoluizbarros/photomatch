@@ -1,7 +1,7 @@
 import { getEvent } from '@/actions/events';
 import { AccessRequestsPanel } from '@/components/admin/access-requests-panel';
 import { AnalyticsPanel } from '@/components/admin/analytics-panel';
-import { EventBrandingForm } from '@/components/admin/event-branding-form';
+import { EventBrandingCard } from '@/components/admin/event-branding-card';
 import { EventSalesCard } from '@/components/admin/event-sales-card';
 import { EventVisibilityToggle } from '@/components/admin/event-visibility-toggle';
 import { PhotographerPermissionsCard } from '@/components/admin/photographer-permissions-card';
@@ -103,7 +103,7 @@ export default async function EventPage({
       <QrCodeCard slug={event.slug} />
 
       {isAdmin && (
-        <EventBrandingForm
+        <EventBrandingCard
           event={event}
           heroPreviewUrl={heroPreviewUrl}
           logoPreviewUrl={logoPreviewUrl}
