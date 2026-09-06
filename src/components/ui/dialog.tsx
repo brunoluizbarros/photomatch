@@ -13,12 +13,18 @@ export function Dialog({
   onClose,
   title,
   children,
+  footer,
   className,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
+  // Fica fixo embaixo, fora da área que rola — pro botão de ação (e um aviso
+  // de edição não salva) continuarem visíveis em formulários compridos, sem
+  // precisar rolar até o fim. Opcional: sem footer, o dialog volta a ser um
+  // bloco só (comportamento de sempre).
+  footer?: ReactNode;
   className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -45,11 +51,15 @@ export function Dialog({
         if (e.target === ref.current) onClose();
       }}
       className={cn(
-        'm-auto w-[min(44rem,calc(100vw-2rem))] rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-0 text-[var(--foreground)] shadow-lg backdrop:bg-black/50',
+        // hidden + open:flex (não só "flex"): o <dialog> fechado não tem o
+        // atributo [open], e o reset do Tailwind aqui não reforça o
+        // display:none padrão do UA contra uma classe utilitária — "flex" sozinho
+        // vencia a especificidade e deixava o modal visível mesmo fechado.
+        'm-auto hidden max-h-[85vh] w-[min(44rem,calc(100vw-2rem))] rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-0 text-[var(--foreground)] shadow-lg open:flex open:flex-col backdrop:bg-black/50',
         className,
       )}
     >
-      <header className="flex items-center justify-between border-[var(--border)] border-b px-5 py-4">
+      <header className="flex shrink-0 items-center justify-between border-[var(--border)] border-b px-5 py-4">
         <h2 className="font-display uppercase">{title}</h2>
         <button
           type="button"
@@ -60,7 +70,12 @@ export function Dialog({
           <X className="size-5" />
         </button>
       </header>
-      <div className="max-h-[75vh] overflow-y-auto p-5">{children}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
+      {footer && (
+        <div className="shrink-0 border-[var(--border)] border-t bg-[var(--surface)] px-5 py-4">
+          {footer}
+        </div>
+      )}
     </dialog>
   );
 }

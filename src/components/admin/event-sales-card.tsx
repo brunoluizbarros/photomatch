@@ -43,6 +43,9 @@ function PlanDialog({
   const [extraPrintPrice, setExtraPrintPrice] = useState('0,00');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Formulário ficou comprido (6 campos) — o aviso + botão fixos no rodapé
+  // do dialog (ver Dialog.footer) dependem de saber se há edição pendente.
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (!plan) return;
@@ -62,7 +65,17 @@ function PlanDialog({
       setExtraPrintPrice(centsToReais(plan.extraPrintPriceCents));
     }
     setError(null);
+    setDirty(false);
   }, [plan]);
+
+  // Envolve cada setter de campo pra marcar "edição pendente" — um único
+  // lugar em vez de repetir `setDirty(true)` em cada onChange.
+  function field<T extends (value: string) => void>(setter: T) {
+    return (value: string) => {
+      setter(value);
+      setDirty(true);
+    };
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -85,15 +98,35 @@ function PlanDialog({
       setError(result.error);
       return;
     }
+    setDirty(false);
     onSaved();
   }
 
   return (
-    <Dialog open={!!plan} onClose={onClose} title={plan === 'new' ? 'Novo plano' : 'Editar plano'}>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <Dialog
+      open={!!plan}
+      onClose={onClose}
+      title={plan === 'new' ? 'Novo plano' : 'Editar plano'}
+      footer={
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-amber-600 text-xs" aria-live="polite">
+            {dirty && !loading ? 'Você tem edições não salvas.' : ''}
+          </p>
+          <Button type="submit" form="plan-form" variant="accent" disabled={loading}>
+            {loading ? 'Salvando...' : 'Salvar plano'}
+          </Button>
+        </div>
+      }
+    >
+      <form id="plan-form" onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1">
           <Label htmlFor="plan-name">Nome</Label>
-          <Input id="plan-name" required value={name} onChange={(e) => setName(e.target.value)} />
+          <Input
+            id="plan-name"
+            required
+            value={name}
+            onChange={(e) => field(setName)(e.target.value)}
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
@@ -103,7 +136,7 @@ function PlanDialog({
               type="number"
               min={0}
               value={digitalQuota}
-              onChange={(e) => setDigitalQuota(e.target.value)}
+              onChange={(e) => field(setDigitalQuota)(e.target.value)}
             />
           </div>
           <div className="space-y-1">
@@ -113,13 +146,13 @@ function PlanDialog({
               type="number"
               min={0}
               value={printQuota}
-              onChange={(e) => setPrintQuota(e.target.value)}
+              onChange={(e) => field(setPrintQuota)(e.target.value)}
             />
           </div>
         </div>
         <div className="space-y-1">
           <Label htmlFor="plan-price">Preço do plano (R$)</Label>
-          <Input id="plan-price" value={price} onChange={(e) => setPrice(e.target.value)} />
+          <Input id="plan-price" value={price} onChange={(e) => field(setPrice)(e.target.value)} />
         </div>
         <div className="border-[var(--border)] border-t pt-4">
           <p className="mb-2 text-[var(--muted-foreground)] text-sm">
@@ -131,7 +164,7 @@ function PlanDialog({
               <Input
                 id="plan-extra-digital"
                 value={extraDigitalPrice}
-                onChange={(e) => setExtraDigitalPrice(e.target.value)}
+                onChange={(e) => field(setExtraDigitalPrice)(e.target.value)}
               />
             </div>
             <div className="space-y-1">
@@ -139,15 +172,12 @@ function PlanDialog({
               <Input
                 id="plan-extra-print"
                 value={extraPrintPrice}
-                onChange={(e) => setExtraPrintPrice(e.target.value)}
+                onChange={(e) => field(setExtraPrintPrice)(e.target.value)}
               />
             </div>
           </div>
         </div>
         {error && <p className="text-[var(--destructive)] text-sm">{error}</p>}
-        <Button type="submit" variant="accent" disabled={loading} className="w-full">
-          {loading ? 'Salvando...' : 'Salvar plano'}
-        </Button>
       </form>
     </Dialog>
   );
