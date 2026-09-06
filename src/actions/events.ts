@@ -154,19 +154,22 @@ export async function updateEventBranding(
   revalidatePath(`/admin/events/${eventId}`);
 }
 
-// Descarte de biometria (LGPD): DELETE primeiro (com cascade em photos e
-// photo_faces), Collection na AWS por último. Se o DELETE falhar, a
-// Collection continua existindo e o evento continua funcional — a ordem
-// inversa deixaria o evento no banco apontando pra uma Collection já
-// apagada, quebrando toda busca (mesmo cuidado que createEvent já tem no
-// sentido oposto: criar a Collection antes do INSERT).
+// Descarte de biometria (LGPD): apaga a Collection na AWS PRIMEIRO, DELETE
+// do evento (com cascade em photos e photo_faces) por último. A ordem
+// importa para conformidade, não só para consistência: se o DELETE falhar
+// depois da Collection já ter sido apagada, o evento fica visível no admin
+// apontando pra uma Collection inexistente — inconveniente, mas os dados
+// biométricos já foram destruídos. Na ordem inversa, uma falha no delete da
+// Collection depois do DELETE do evento apagaria a única referência ao
+// rekognitionCollectionId — os vetores faciais ficariam órfãos na AWS, sem
+// nenhum caminho no app pra encontrá-los e apagá-los depois.
 export async function deleteEvent(eventId: string) {
   await requireAdmin();
   const [event] = await db.select().from(events).where(eq(events.id, eventId));
   if (!event) throw new Error('Event not found');
 
-  await db.delete(events).where(eq(events.id, eventId));
   await deleteEventCollection(event.rekognitionCollectionId);
+  await db.delete(events).where(eq(events.id, eventId));
   revalidatePath('/admin');
 }
 
