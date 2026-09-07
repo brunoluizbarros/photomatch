@@ -2,7 +2,9 @@
 
 import { GuestHome } from '@/components/home/guest-home';
 import { OrganizerHome } from '@/components/home/organizer-home';
+import { fadeUp, staggerContainer } from '@/lib/motion/variants';
 import { Camera, Megaphone, ScanFace } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 
 // Mesmos valores de src/app/globals.css (--foreground/--background/--accent)
@@ -61,39 +63,71 @@ export function HomeExperience() {
   if (!persona) {
     return (
       <div
-        className="flex min-h-dvh flex-col items-center justify-center px-5 py-10 font-sans"
+        className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-5 py-10 font-sans"
         style={{ background: CREAM, color: INK }}
       >
-        <ScanFace className="mb-6 size-10" strokeWidth={1.5} style={{ color: ACCENT }} />
-        <h1 className="mb-2 text-center font-display text-3xl uppercase sm:text-4xl">
-          Photo<span style={{ color: ACCENT }}>Match</span>
-        </h1>
-        <p className="mb-10 max-w-[38ch] text-center text-[14px] leading-relaxed opacity-70">
-          Reconhecimento facial pra achar fotos de evento em segundos.
-        </p>
-        <div className="grid w-full max-w-lg gap-4 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => choose('guest')}
-            className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center shadow-sm transition-transform hover:-translate-y-0.5"
+        {/* Glow radial sutil atrás do conteúdo — mesmo espírito do Ken Burns
+            do hero de evento, mas sem foto: não há imagem real da marca pra
+            usar aqui, então um brilho na cor de destaque faz esse papel. */}
+        <motion.div
+          aria-hidden
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
+          className="-z-10 pointer-events-none absolute top-1/2 left-1/2 size-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px]"
+          style={{ background: ACCENT, opacity: 0.16 }}
+        />
+
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+          className="flex flex-col items-center"
+        >
+          <motion.div variants={fadeUp}>
+            <ScanFace className="mb-6 size-10" strokeWidth={1.5} style={{ color: ACCENT }} />
+          </motion.div>
+
+          <h1 className="mb-2 text-center font-display text-3xl uppercase sm:text-4xl">
+            <motion.span variants={fadeUp} className="inline-block">
+              Photo
+            </motion.span>
+            <motion.span variants={fadeUp} className="inline-block" style={{ color: ACCENT }}>
+              Match
+            </motion.span>
+          </h1>
+
+          <motion.p
+            variants={fadeUp}
+            className="mb-10 max-w-[38ch] text-center text-[14px] leading-relaxed opacity-70"
           >
-            <Camera className="size-8" strokeWidth={1.5} />
-            <span className="font-display text-lg uppercase">Sou convidado</span>
-            <span className="text-[13px] opacity-70">
-              Fui num evento e quero achar minhas fotos
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => choose('organizer')}
-            className="flex flex-col items-center gap-3 rounded-2xl p-6 text-center text-white shadow-sm transition-transform hover:-translate-y-0.5"
-            style={{ background: INK }}
-          >
-            <Megaphone className="size-8" strokeWidth={1.5} />
-            <span className="font-display text-lg uppercase">Sou organizador</span>
-            <span className="text-[13px] opacity-70">Quero usar a ferramenta no meu evento</span>
-          </button>
-        </div>
+            Reconhecimento facial pra achar fotos de evento em segundos.
+          </motion.p>
+
+          <motion.div variants={fadeUp} className="grid w-full max-w-lg gap-4 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => choose('guest')}
+              className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center shadow-sm transition-transform hover:-translate-y-0.5"
+            >
+              <Camera className="size-8" strokeWidth={1.5} />
+              <span className="font-display text-lg uppercase">Sou convidado</span>
+              <span className="text-[13px] opacity-70">
+                Fui num evento e quero achar minhas fotos
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => choose('organizer')}
+              className="flex flex-col items-center gap-3 rounded-2xl p-6 text-center text-white shadow-sm transition-transform hover:-translate-y-0.5"
+              style={{ background: INK }}
+            >
+              <Megaphone className="size-8" strokeWidth={1.5} />
+              <span className="font-display text-lg uppercase">Sou organizador</span>
+              <span className="text-[13px] opacity-70">Quero usar a ferramenta no meu evento</span>
+            </button>
+          </motion.div>
+        </motion.div>
       </div>
     );
   }

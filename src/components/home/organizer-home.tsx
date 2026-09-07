@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { fadeUp, staggerContainer } from '@/lib/motion/variants';
 import { cn } from '@/lib/utils/cn';
 import {
   ArrowRight,
@@ -9,7 +10,18 @@ import {
   Smartphone,
   UploadCloud,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import Link from 'next/link';
+
+// Página comprida com várias seções abaixo da dobra — cada uma revela ao
+// entrar na viewport (whileInView), não tudo de uma vez no mount como o
+// picker inicial (home-experience.tsx). `once: true` = não re-anima ao
+// rolar pra cima e descer de novo.
+const revealOnScroll = {
+  initial: 'hidden',
+  whileInView: 'show',
+  viewport: { once: true, amount: 0.3 },
+} as const;
 
 // Mesmos valores de src/app/globals.css — ver comentário em
 // home-experience.tsx sobre por que ficam duplicados aqui.
@@ -97,26 +109,32 @@ const PLANS = [
 export function OrganizerHome() {
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-5 py-10 sm:py-16">
-      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"
+      >
         {/* marca + proposta */}
         <div className="grid sm:grid-cols-2">
           <div
             className="flex flex-col justify-between gap-8 border-b p-6 sm:border-r sm:border-b-0 sm:p-10"
             style={{ borderColor: `${INK}26` }}
           >
-            <div
+            <motion.div
+              variants={fadeUp}
               className="grid size-16 place-items-center rounded-full border-2"
               style={{ borderColor: ACCENT, color: ACCENT }}
             >
               <ScanFace className="size-8" strokeWidth={1.5} />
-            </div>
-            <div>
+            </motion.div>
+            <motion.div variants={fadeUp}>
               <div className="mb-3 h-1 w-16" style={{ background: INK }} />
               <p className="max-w-[30ch] text-[13px] leading-relaxed">
                 Reconhecimento facial pra achar suas fotos de evento em segundos — sem procurar
                 álbum por álbum.
               </p>
-            </div>
+            </motion.div>
           </div>
           <div className="relative flex items-center justify-center p-10 sm:p-12">
             <span
@@ -127,19 +145,26 @@ export function OrganizerHome() {
               *
             </span>
             <h1 className="font-display text-[15vw] uppercase leading-[0.85] tracking-[-0.01em] sm:text-[72px]">
-              <span className="block">Photo</span>
-              <span className="block" style={{ color: ACCENT }}>
+              <motion.span variants={fadeUp} className="block">
+                Photo
+              </motion.span>
+              <motion.span variants={fadeUp} className="block" style={{ color: ACCENT }}>
                 Match
-              </span>
+              </motion.span>
             </h1>
           </div>
         </div>
 
         {/* como funciona */}
-        <div className="grid border-t sm:grid-cols-3" style={{ borderColor: `${INK}26` }}>
+        <motion.div
+          variants={staggerContainer}
+          className="grid border-t sm:grid-cols-3"
+          style={{ borderColor: `${INK}26` }}
+        >
           {STEPS.map((step, i) => (
-            <div
+            <motion.div
               key={step.n}
+              variants={fadeUp}
               className={cn('p-6 sm:p-8', i > 0 && 'border-t sm:border-t-0 sm:border-l')}
               style={i > 0 ? { borderColor: `${INK}26` } : undefined}
             >
@@ -150,12 +175,13 @@ export function OrganizerHome() {
               <p className="text-[13px] leading-relaxed" style={{ color: `${INK}b3` }}>
                 {step.body}
               </p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         {/* CTA */}
-        <div
+        <motion.div
+          variants={fadeUp}
           className="flex flex-col items-center gap-4 border-t p-6 text-center sm:flex-row sm:justify-between sm:p-8"
           style={{ borderColor: `${INK}26` }}
         >
@@ -174,18 +200,27 @@ export function OrganizerHome() {
               </span>
             </Link>
           </Button>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* benefícios */}
-      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-        <div className="border-b p-6 sm:p-8" style={{ borderColor: `${INK}26` }}>
+      <motion.div
+        {...revealOnScroll}
+        variants={staggerContainer}
+        className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"
+      >
+        <motion.div
+          variants={fadeUp}
+          className="border-b p-6 sm:p-8"
+          style={{ borderColor: `${INK}26` }}
+        >
           <h2 className="font-display text-2xl uppercase">Por que usar o PhotoMatch</h2>
-        </div>
+        </motion.div>
         <div className="grid sm:grid-cols-3">
           {BENEFITS.map((b, i) => (
-            <div
+            <motion.div
               key={b.title}
+              variants={fadeUp}
               className={cn(
                 'p-6 sm:p-8',
                 i % 3 !== 0 && 'sm:border-l',
@@ -199,21 +234,32 @@ export function OrganizerHome() {
               <p className="text-[13px] leading-relaxed" style={{ color: `${INK}b3` }}>
                 {b.body}
               </p>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* planos */}
-      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-        <div className="border-b p-6 sm:p-8" style={{ borderColor: `${INK}26` }}>
+      <motion.div
+        {...revealOnScroll}
+        variants={staggerContainer}
+        className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"
+      >
+        <motion.div
+          variants={fadeUp}
+          className="border-b p-6 sm:p-8"
+          style={{ borderColor: `${INK}26` }}
+        >
           <h2 className="font-display text-2xl uppercase">Planos</h2>
           <p className="mt-1 text-[13px] opacity-70">Comece grátis, cresça quando precisar.</p>
-        </div>
+        </motion.div>
         <div className="grid sm:grid-cols-3">
           {PLANS.map((plan, i) => (
-            <div
+            <motion.div
               key={plan.name}
+              variants={fadeUp}
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.2 }}
               className={cn(
                 'flex flex-col gap-4 p-6 sm:p-8',
                 i > 0 && 'border-t sm:border-t-0 sm:border-l',
@@ -244,10 +290,10 @@ export function OrganizerHome() {
               >
                 <Link href="/admin">Começar</Link>
               </Button>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
