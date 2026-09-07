@@ -1,6 +1,6 @@
 'use client';
 
-import { createEvent } from '@/actions/events';
+import { createEvent, listEventCategories } from '@/actions/events';
 import { EventBrandingForm } from '@/components/admin/event-branding-form';
 import { EventDetail } from '@/components/admin/event-detail';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,9 @@ import { cn } from '@/lib/utils/cn';
 import { slugify } from '@/lib/utils/slugify';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
+
+type Categories = Awaited<ReturnType<typeof listEventCategories>>;
 
 type CreateEventResult = Awaited<ReturnType<typeof createEvent>>;
 type CreatedEvent = Extract<CreateEventResult, { ok: true }>['event'];
@@ -50,14 +52,25 @@ function StepBasics({ onCreated }: { onCreated: (event: CreatedEvent) => void })
   const [slug, setSlug] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [eventDate, setEventDate] = useState('');
+  const [categories, setCategories] = useState<Categories | null>(null);
+  const [categoryId, setCategoryId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    listEventCategories().then(setCategories);
+  }, []);
 
   async function handleSubmit(formEvent: FormEvent) {
     formEvent.preventDefault();
     setLoading(true);
     setError(null);
-    const result = await createEvent({ name, slug, eventDate: eventDate || undefined });
+    const result = await createEvent({
+      name,
+      slug,
+      categoryId,
+      eventDate: eventDate || undefined,
+    });
     if (!result.ok) {
       setError(result.error);
       setLoading(false);
@@ -91,6 +104,26 @@ function StepBasics({ onCreated }: { onCreated: (event: CreatedEvent) => void })
             setSlugTouched(true);
           }}
         />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="wizard-category">Categoria</Label>
+        <select
+          id="wizard-category"
+          required
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          disabled={!categories}
+          className="h-11 w-full rounded-xl border-2 border-[var(--border)] bg-transparent px-3.5 text-sm outline-none transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]"
+        >
+          <option value="" disabled>
+            {categories ? 'Selecione...' : 'Carregando...'}
+          </option>
+          {categories?.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="space-y-1">
         <Label htmlFor="wizard-date">Data do evento (opcional)</Label>

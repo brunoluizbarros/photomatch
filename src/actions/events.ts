@@ -3,7 +3,7 @@
 import { ownedBy, requireAdmin, requireUser } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
 import { eventAllowsAllPhotos } from '@/lib/db/event-scope';
-import { events, photos } from '@/lib/db/schemas';
+import { events, event_categories, photos } from '@/lib/db/schemas';
 import {
   collectionIdForEvent,
   createEventCollection,
@@ -17,7 +17,24 @@ import { revalidatePath } from 'next/cache';
 // eventos (só a galeria de fotos é escopada por dono).
 export async function listEvents() {
   await requireUser();
-  return db.select().from(events).orderBy(events.createdAt);
+  return db
+    .select({
+      id: events.id,
+      name: events.name,
+      slug: events.slug,
+      createdAt: events.createdAt,
+      categoryName: event_categories.name,
+    })
+    .from(events)
+    .innerJoin(event_categories, eq(event_categories.id, events.categoryId))
+    .orderBy(events.createdAt);
+}
+
+// Cadastro do sistema, seedado em 0015_*.sql — sem admin CRUD ainda (ver
+// src/lib/db/schemas/event_categories.ts).
+export async function listEventCategories() {
+  await requireAdmin();
+  return db.select().from(event_categories).orderBy(event_categories.name);
 }
 
 // Cards de estatística do painel principal — porta o padrão de dashboard do
@@ -59,8 +76,15 @@ export async function getPublishedEventBySlug(slug: string) {
 // produção (substitui por um texto genérico + digest, de propósito, pra não
 // vazar detalhe de servidor) — só falhas verdadeiramente inesperadas (AWS,
 // banco) devem continuar lançando e caindo nesse comportamento redigido.
-export async function createEvent(input: { name: string; slug: string; eventDate?: string }) {
+export async function createEvent(input: {
+  name: string;
+  slug: string;
+  categoryId: string;
+  eventDate?: string;
+}) {
   await requireAdmin();
+
+  if (!input.categoryId) return { ok: false as const, error: 'Selecione uma categoria.' };
 
   // Checa o slug ANTES de criar a Collection: o insert é a última coisa que
   // acontece, então um slug repetido deixaria uma Collection órfã na AWS.
@@ -84,6 +108,7 @@ export async function createEvent(input: { name: string; slug: string; eventDate
       id,
       name: input.name,
       slug: input.slug,
+      categoryId: input.categoryId,
       // T12:00 local: <input type="date"> manda 'YYYY-MM-DD', que new Date()
       // interpreta como meia-noite UTC — em UTC-3 a data exibida voltaria um dia.
       eventDate: input.eventDate ? new Date(`${input.eventDate}T12:00:00`) : undefined,

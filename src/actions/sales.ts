@@ -5,7 +5,7 @@ import { db } from '@/lib/db/client';
 import { events, event_plans, order_items, orders, photos } from '@/lib/db/schemas';
 import { markOrderPaid as markOrderPaidWrite } from '@/lib/orders/mark-paid';
 import { getPresignedDownloadUrl } from '@/lib/storage/presign';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 // Tudo neste arquivo é admin-only — é a metade "config e operação" da venda
@@ -97,13 +97,70 @@ export async function deletePlan(planId: string) {
   return { ok: true as const };
 }
 
+// extraDigitalCount/extraPrintCount no pedido são só os itens avulsos (além
+// da cota do plano) — um pedido inteiro dentro da cota mostra 0/0 ali, o que
+// parece "carrinho vazio" pro admin. Aqui contamos os order_items de verdade
+// (por kind) pra mostrar quantas fotos o pedido realmente tem.
 export async function listOrders(eventId: string) {
   await requireAdmin();
-  return db
+  const orderRows = await db
     .select()
     .from(orders)
     .where(eq(orders.eventId, eventId))
     .orderBy(desc(orders.createdAt));
+
+  if (orderRows.length === 0) return [];
+
+  const itemCounts = await db
+    .select({ orderId: order_items.orderId, kind: order_items.kind, total: count() })
+    .from(order_items)
+    .where(
+      inArray(
+        order_items.orderId,
+        orderRows.map((o) => o.id),
+      ),
+    )
+    .groupBy(order_items.orderId, order_items.kind);
+
+  const countsByOrder = new Map<string, { digitalCount: number; printCount: number }>();
+  for (const row of itemCounts) {
+    const entry = countsByOrder.get(row.orderId) ?? { digitalCount: 0, printCount: 0 };
+    if (row.kind === 'digital') entry.digitalCount = row.total;
+    else entry.printCount = row.total;
+    countsByOrder.set(row.orderId, entry);
+  }
+
+  return orderRows.map((order) => ({
+    ...order,
+    ...(countsByOrder.get(order.id) ?? { digitalCount: 0, printCount: 0 }),
+  }));
+}
+
+// Fotos de um pedido (qualquer status) pro admin conferir o que foi
+// comprado antes de marcar como pago — mesmo padrão de assinatura do
+// listPrintQueue, mas aqui é o preview com marca d'água (o mesmo que o
+// convidado viu no carrinho), não o original.
+export async function listOrderPhotos(orderId: string) {
+  await requireAdmin();
+  const rows = await db
+    .select({
+      itemId: order_items.id,
+      kind: order_items.kind,
+      previewKey: photos.previewKey,
+      storageKey: photos.storageKey,
+    })
+    .from(order_items)
+    .innerJoin(photos, eq(order_items.photoId, photos.id))
+    .where(eq(order_items.orderId, orderId))
+    .orderBy(order_items.createdAt);
+
+  return Promise.all(
+    rows.map(async (row) => ({
+      itemId: row.itemId,
+      kind: row.kind,
+      url: await getPresignedDownloadUrl(row.previewKey ?? row.storageKey),
+    })),
+  );
 }
 
 export async function markOrderPaid(orderId: string) {

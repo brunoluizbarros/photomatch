@@ -168,7 +168,29 @@ export async function getOrderByToken(token: string) {
   const [order] = await db.select().from(orders).where(eq(orders.token, token));
   if (!order) return { ok: false as const, error: 'Pedido não encontrado.' };
 
-  const items = await db.select().from(order_items).where(eq(order_items.orderId, order.id));
+  // Thumb é o preview com marca d'água (mesmo que o convidado viu no
+  // carrinho) — nunca o original, o pedido pode ainda nem estar pago.
+  const rows = await db
+    .select({
+      id: order_items.id,
+      photoId: order_items.photoId,
+      kind: order_items.kind,
+      printedAt: order_items.printedAt,
+      deliveredAt: order_items.deliveredAt,
+      previewKey: photos.previewKey,
+      storageKey: photos.storageKey,
+    })
+    .from(order_items)
+    .innerJoin(photos, eq(order_items.photoId, photos.id))
+    .where(eq(order_items.orderId, order.id));
+
+  const items = await Promise.all(
+    rows.map(async ({ previewKey, storageKey, ...item }) => ({
+      ...item,
+      url: await getPresignedDownloadUrl(previewKey ?? storageKey),
+    })),
+  );
+
   return { ok: true as const, order, items };
 }
 

@@ -23,6 +23,7 @@ describe.skipIf(!hasDb)('claimPhotoBatch', () => {
       id: eventId,
       name: 'test',
       slug: `test-${eventId}`,
+      categoryId: 'outro',
       rekognitionCollectionId: `test-${eventId}`,
     });
 

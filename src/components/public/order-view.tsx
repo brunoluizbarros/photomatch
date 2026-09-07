@@ -4,6 +4,7 @@ import { type getOrderByToken, getOrderPhotoDownloadUrl } from '@/actions/orders
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Download, Loader2, Printer } from 'lucide-react';
+import Image from 'next/image';
 import { useState } from 'react';
 
 type OrderResult = Extract<Awaited<ReturnType<typeof getOrderByToken>>, { ok: true }>;
@@ -71,8 +72,13 @@ export function OrderView({ token, order, items }: { token: string } & Omit<Orde
           <h2 className="font-semibold text-sm uppercase tracking-wide">Fotos digitais</h2>
           <div className="space-y-2">
             {digitalItems.map((item) => (
-              <Card key={item.id} className="flex items-center justify-between p-3">
-                <span className="text-sm">Foto {item.photoId.slice(0, 8)}</span>
+              <Card key={item.id} className="flex items-center justify-between gap-3 p-3">
+                <span className="flex items-center gap-3 text-sm">
+                  <span className="relative size-12 shrink-0 overflow-hidden rounded-md bg-[var(--muted)]">
+                    <Image src={item.url} alt="Foto do pedido" fill className="object-cover" />
+                  </span>
+                  Foto {item.photoId.slice(0, 8)}
+                </span>
                 {order.status === 'paid' ? (
                   <DigitalItem token={token} photoId={item.photoId} />
                 ) : (
@@ -91,9 +97,12 @@ export function OrderView({ token, order, items }: { token: string } & Omit<Orde
           <h2 className="font-semibold text-sm uppercase tracking-wide">Fotos impressas</h2>
           <div className="space-y-2">
             {printItems.map((item) => (
-              <Card key={item.id} className="flex items-center justify-between p-3">
-                <span className="flex items-center gap-2 text-sm">
-                  <Printer className="size-4" />
+              <Card key={item.id} className="flex items-center justify-between gap-3 p-3">
+                <span className="flex items-center gap-3 text-sm">
+                  <span className="relative size-12 shrink-0 overflow-hidden rounded-md bg-[var(--muted)]">
+                    <Image src={item.url} alt="Foto do pedido" fill className="object-cover" />
+                  </span>
+                  <Printer className="size-4 shrink-0" />
                   Foto {item.photoId.slice(0, 8)}
                 </span>
                 <span className="text-[var(--muted-foreground)] text-xs">

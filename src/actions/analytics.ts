@@ -3,7 +3,7 @@
 import { funnelRates } from '@/lib/analytics/funnel-rates';
 import { requireAdmin } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
-import { events, analytics_events } from '@/lib/db/schemas';
+import { events, analytics_events, event_categories } from '@/lib/db/schemas';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 
 // ponytail: timezone fixa. O produto é 100% pt-BR; um evento fora do fuso
@@ -52,12 +52,14 @@ export async function getStatsByEvent(days = 30) {
       slug: events.slug,
       isPublished: events.isPublished,
       createdAt: events.createdAt,
+      categoryName: event_categories.name,
       visits: sql<number>`count(*) filter (where ${analytics_events.type} = 'visit')::int`,
       searches: sql<number>`${searches}::int`,
       found: sql<number>`count(*) filter (where ${analytics_events.type} = 'search' and ${analytics_events.photoCount} > 0)::int`,
       people: sql<number>`count(distinct ${analytics_events.deviceId})::int`,
     })
     .from(events)
+    .innerJoin(event_categories, eq(event_categories.id, events.categoryId))
     .leftJoin(
       analytics_events,
       and(
@@ -65,7 +67,7 @@ export async function getStatsByEvent(days = 30) {
         gte(analytics_events.createdAt, windowStart(days)),
       ),
     )
-    .groupBy(events.id)
+    .groupBy(events.id, event_categories.name)
     .orderBy(desc(searches), desc(events.createdAt));
 }
 

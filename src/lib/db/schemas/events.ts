@@ -1,6 +1,7 @@
 import { createId } from '@paralleldrive/cuid2';
 import { relations } from 'drizzle-orm';
 import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { event_categories } from './event_categories';
 import { photos } from './photos';
 
 export const events = pgTable('events', {
@@ -10,6 +11,14 @@ export const events = pgTable('events', {
     .$defaultFn(() => createId()),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
+  // Cadastro do sistema (event_categories, seedado em 0015_*.sql), não um
+  // enum — obrigatória: escolhida no passo 1 do wizard de criação
+  // (src/components/admin/event-create-wizard.tsx), sem default aqui de
+  // propósito. onDelete 'restrict': uma categoria em uso não pode ser
+  // apagada (não existe tela de gestão ainda, mas a constraint já protege).
+  categoryId: text('category_id')
+    .notNull()
+    .references(() => event_categories.id, { onDelete: 'restrict' }),
   eventDate: timestamp('event_date', { withTimezone: true }),
   isPublished: boolean('is_published').notNull().default(false),
   // Descoberta na home pública: convidado busca o evento pelo nome
@@ -36,7 +45,12 @@ export const events = pgTable('events', {
   logoUrl: text('logo_url'),
   heroImageKey: text('hero_image_key'),
   logoImageKey: text('logo_image_key'),
-  primaryColor: text('primary_color').notNull().default('#c0714a'),
+  // Guarda o id de um ACCENT_PRESETS (ver src/lib/theme/accent-presets.ts),
+  // nunca um hex cru — getAccentPreset(id) não reconhece hex, cai no preset
+  // violeta default se receber um. 'clay' é o id cujo solid (#c0714a)
+  // corresponde ao hex que era o default aqui antes do sistema de presets
+  // existir (ver migration 0005: eventos com o hex antigo foram migrados).
+  primaryColor: text('primary_color').notNull().default('clay'),
   // Preset de fonte de exibição (título/eyebrow) — ver src/lib/theme/font-presets.ts.
   fontId: text('font_id').notNull().default('fraunces'),
   // Preset de fundo do corpo (tudo abaixo do hero) — ver src/lib/theme/body-presets.ts.

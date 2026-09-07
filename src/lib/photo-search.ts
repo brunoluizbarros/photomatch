@@ -1,7 +1,11 @@
 import { env } from '@/config/env';
 import { db } from '@/lib/db/client';
 import { photos } from '@/lib/db/schemas';
-import { InvalidParameterException } from '@aws-sdk/client-rekognition';
+import {
+  ImageTooLargeException,
+  InvalidImageFormatException,
+  InvalidParameterException,
+} from '@aws-sdk/client-rekognition';
 import { and, inArray, isNotNull } from 'drizzle-orm';
 import { searchFacesBySelfie } from './rekognition/faces';
 import { getPresignedDownloadUrl } from './storage/presign';
@@ -57,8 +61,16 @@ export async function searchPhotosByFace(params: {
       detectedCount++;
       matches.push(...found);
     } catch (err) {
-      if (!(err instanceof InvalidParameterException)) throw err;
-      // rosto não detectado nesta selfie — segue para as próximas
+      // Rosto não detectado, formato de imagem que o Rekognition rejeita
+      // (ex: WebP) ou arquivo grande demais — segue para as próximas
+      // selfies em vez de derrubar a busca inteira.
+      if (
+        !(err instanceof InvalidParameterException) &&
+        !(err instanceof InvalidImageFormatException) &&
+        !(err instanceof ImageTooLargeException)
+      ) {
+        throw err;
+      }
     }
   }
 

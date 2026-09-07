@@ -28,6 +28,7 @@ describe.skipIf(!hasDb)('ownedBy scoping', () => {
       id: eventId,
       name: 'test',
       slug: `test-${eventId}`,
+      categoryId: 'outro',
       rekognitionCollectionId: `test-${eventId}`,
     });
     await db.insert(user).values([
