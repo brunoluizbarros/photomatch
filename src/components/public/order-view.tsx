@@ -3,7 +3,7 @@
 import { type getOrderByToken, getOrderPhotoDownloadUrl } from '@/actions/orders';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Download, Loader2, Printer } from 'lucide-react';
+import { Download, ImageOff, Loader2, Printer } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -31,6 +31,21 @@ function DigitalItem({ token, photoId }: { token: string; photoId: string }) {
       {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
       Baixar
     </Button>
+  );
+}
+
+// Sem preview ainda (indexação recente ou backfill pendente) — nunca cai
+// pro original aqui (ver src/actions/orders.ts:getOrderByToken), só mostra
+// um placeholder até o preview existir.
+function Thumb({ url }: { url: string | null }) {
+  return (
+    <span className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--muted)]">
+      {url ? (
+        <Image src={url} alt="Foto do pedido" fill className="object-cover" />
+      ) : (
+        <ImageOff className="size-4 text-[var(--muted-foreground)]" />
+      )}
+    </span>
   );
 }
 
@@ -74,9 +89,7 @@ export function OrderView({ token, order, items }: { token: string } & Omit<Orde
             {digitalItems.map((item) => (
               <Card key={item.id} className="flex items-center justify-between gap-3 p-3">
                 <span className="flex items-center gap-3 text-sm">
-                  <span className="relative size-12 shrink-0 overflow-hidden rounded-md bg-[var(--muted)]">
-                    <Image src={item.url} alt="Foto do pedido" fill className="object-cover" />
-                  </span>
+                  <Thumb url={item.url} />
                   Foto {item.photoId.slice(0, 8)}
                 </span>
                 {order.status === 'paid' ? (
@@ -99,9 +112,7 @@ export function OrderView({ token, order, items }: { token: string } & Omit<Orde
             {printItems.map((item) => (
               <Card key={item.id} className="flex items-center justify-between gap-3 p-3">
                 <span className="flex items-center gap-3 text-sm">
-                  <span className="relative size-12 shrink-0 overflow-hidden rounded-md bg-[var(--muted)]">
-                    <Image src={item.url} alt="Foto do pedido" fill className="object-cover" />
-                  </span>
+                  <Thumb url={item.url} />
                   <Printer className="size-4 shrink-0" />
                   Foto {item.photoId.slice(0, 8)}
                 </span>

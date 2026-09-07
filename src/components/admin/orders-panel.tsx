@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Dialog } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Download, Printer } from 'lucide-react';
+import { Download, ImageOff, Printer } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -149,8 +149,12 @@ export function OrdersPanel({ eventId }: { eventId: string }) {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {previewPhotos.map((photo) => (
               <div key={photo.itemId} className="space-y-1">
-                <div className="relative aspect-square overflow-hidden rounded-lg bg-[var(--muted)]">
-                  <Image src={photo.url} alt="Foto do pedido" fill className="object-cover" />
+                <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-[var(--muted)]">
+                  {photo.url ? (
+                    <Image src={photo.url} alt="Foto do pedido" fill className="object-cover" />
+                  ) : (
+                    <ImageOff className="size-5 text-[var(--muted-foreground)]" />
+                  )}
                 </div>
                 <p className="flex items-center gap-1 text-[var(--muted-foreground)] text-xs">
                   {photo.kind === 'digital' ? (

@@ -155,11 +155,19 @@ export async function listOrderPhotos(orderId: string) {
     .orderBy(order_items.createdAt);
 
   return Promise.all(
-    rows.map(async (row) => ({
-      itemId: row.itemId,
-      kind: row.kind,
-      url: await getPresignedDownloadUrl(row.previewKey ?? row.storageKey),
-    })),
+    rows.map(async (row) => {
+      // Impressa: original de propósito, mesmo padrão do listPrintQueue —
+      // o operador precisa conferir qualidade antes de mandar pra
+      // impressão. Digital: NUNCA o original antes de pago — se o preview
+      // ainda não existir (indexação recente, backfill pendente), sem
+      // preview nenhum em vez de vazar o arquivo que o cliente comprou.
+      const key = row.kind === 'print' ? (row.previewKey ?? row.storageKey) : row.previewKey;
+      return {
+        itemId: row.itemId,
+        kind: row.kind,
+        url: key ? await getPresignedDownloadUrl(key) : null,
+      };
+    }),
   );
 }
 
