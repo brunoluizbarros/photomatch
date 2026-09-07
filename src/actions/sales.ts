@@ -2,8 +2,9 @@
 
 import { requireAdmin } from '@/lib/auth/require-admin';
 import { db } from '@/lib/db/client';
-import { events, event_plans, order_items, orders, photos } from '@/lib/db/schemas';
+import { events, event_plans, order_items, orders, photos, user } from '@/lib/db/schemas';
 import { markOrderPaid as markOrderPaidWrite } from '@/lib/orders/mark-paid';
+import type { PrintSize } from '@/lib/print';
 import { getPresignedDownloadUrl } from '@/lib/storage/presign';
 import { and, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -148,25 +149,25 @@ export async function listOrderPhotos(orderId: string) {
       kind: order_items.kind,
       previewKey: photos.previewKey,
       storageKey: photos.storageKey,
+      printSize: order_items.printSize,
+      printedAt: order_items.printedAt,
+      printedByName: user.name,
     })
     .from(order_items)
     .innerJoin(photos, eq(order_items.photoId, photos.id))
+    .leftJoin(user, eq(user.id, order_items.printedBy))
     .where(eq(order_items.orderId, orderId))
     .orderBy(order_items.createdAt);
 
   return Promise.all(
-    rows.map(async (row) => {
+    rows.map(async ({ previewKey, storageKey, ...row }) => {
       // Impressa: original de propósito, mesmo padrão do listPrintQueue —
       // o operador precisa conferir qualidade antes de mandar pra
       // impressão. Digital: NUNCA o original antes de pago — se o preview
       // ainda não existir (indexação recente, backfill pendente), sem
       // preview nenhum em vez de vazar o arquivo que o cliente comprou.
-      const key = row.kind === 'print' ? (row.previewKey ?? row.storageKey) : row.previewKey;
-      return {
-        itemId: row.itemId,
-        kind: row.kind,
-        url: key ? await getPresignedDownloadUrl(key) : null,
-      };
+      const key = row.kind === 'print' ? (previewKey ?? storageKey) : previewKey;
+      return { ...row, url: key ? await getPresignedDownloadUrl(key) : null };
     }),
   );
 }
@@ -226,12 +227,17 @@ export async function listPrintQueue(eventId: string) {
 
 // eventId vem do cliente só para revalidar o caminho certo — a query em si
 // não usa (a fila já filtra por evento na leitura, isto só marca).
-export async function markItemsPrinted(eventId: string, itemIds: string[]) {
-  await requireAdmin();
+//
+// size é obrigatório e único pro lote inteiro — individual (1 item) ou em
+// massa (N itens) é só o tamanho de itemIds, a mesma chamada serve os dois;
+// tamanhos diferentes na mesma leva exigem duas chamadas (uma por tamanho).
+export async function markItemsPrinted(eventId: string, itemIds: string[], size: PrintSize) {
+  const { userId } = await requireAdmin();
   if (itemIds.length === 0) return { ok: true as const };
-  for (const itemId of itemIds) {
-    await db.update(order_items).set({ printedAt: new Date() }).where(eq(order_items.id, itemId));
-  }
+  await db
+    .update(order_items)
+    .set({ printedAt: new Date(), printedBy: userId, printSize: size })
+    .where(inArray(order_items.id, itemIds));
   revalidatePath(`/admin/events/${eventId}/print-queue`);
   return { ok: true as const };
 }

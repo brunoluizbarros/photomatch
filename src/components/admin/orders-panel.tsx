@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog } from '@/components/ui/dialog';
+import { PRINT_SIZES } from '@/lib/print';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Download, ImageOff, Printer } from 'lucide-react';
@@ -13,6 +14,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 type Orders = Awaited<ReturnType<typeof listOrders>>;
 type OrderPhotos = Awaited<ReturnType<typeof listOrderPhotos>>;
+
+const PRINT_SIZE_LABEL: Record<string, string> = Object.fromEntries(
+  PRINT_SIZES.map((s) => [s.value, s.label]),
+);
 
 const STATUS_LABEL: Record<
   Orders[number]['status'],
@@ -164,6 +169,13 @@ export function OrdersPanel({ eventId }: { eventId: string }) {
                   )}
                   {photo.kind === 'digital' ? 'Digital' : 'Impressa'}
                 </p>
+                {photo.printedAt && (
+                  <p className="text-[var(--muted-foreground)] text-xs">
+                    {PRINT_SIZE_LABEL[photo.printSize ?? ''] ?? photo.printSize} ·{' '}
+                    {format(photo.printedAt, "dd/MM 'às' HH:mm", { locale: ptBR })}
+                    {photo.printedByName && ` · ${photo.printedByName}`}
+                  </p>
+                )}
               </div>
             ))}
           </div>

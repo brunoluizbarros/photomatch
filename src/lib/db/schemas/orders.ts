@@ -19,6 +19,11 @@ export const orderStatusEnum = pgEnum('order_status', ['awaiting_payment', 'paid
 
 export const orderItemKindEnum = pgEnum('order_item_kind', ['digital', 'print']);
 
+// Tamanhos físicos oferecidos no totem/fila de impressão (ver print-queue-
+// panel.tsx) — fixos por enquanto, sem tela de cadastro (mesmo espírito de
+// event_categories: cadastro do sistema, não por evento).
+export const printSizeEnum = pgEnum('print_size', ['5x7', 'polaroid', '10x15', '15x20']);
+
 // Pedido de compra de fotos. Nasce no checkout público (sem login — ver
 // src/actions/orders.ts) e some para "paid" só quando um admin confirma o
 // pagamento (placeholder de gateway; ver src/lib/orders/mark-paid.ts). Todo
@@ -78,6 +83,12 @@ export const order_items = pgTable(
       .references(() => photos.id, { onDelete: 'restrict' }),
     kind: orderItemKindEnum('kind').notNull(),
     printedAt: timestamp('printed_at', { withTimezone: true }),
+    // Só preenchidos junto com printedAt, no mesmo markItemsPrinted (ver
+    // src/actions/sales.ts) — rastreabilidade de quem mandou imprimir, em
+    // qual tamanho. Nulos pra item ainda não impresso (ou impresso antes
+    // dessas colunas existirem).
+    printSize: printSizeEnum('print_size'),
+    printedBy: text('printed_by').references(() => user.id, { onDelete: 'set null' }),
     deliveredAt: timestamp('delivered_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
