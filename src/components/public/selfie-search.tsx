@@ -18,6 +18,7 @@ import {
   Download,
   Expand,
   ImageOff,
+  Images,
   Loader2,
   Plus,
   Printer,
@@ -289,6 +290,7 @@ export function SelfieSearch({
   // sem isso. Guarda quais IDs falharam pra trocar por um estado explícito.
   const [brokenIds, setBrokenIds] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   async function handleAddFile(file: File | undefined) {
     if (!file) return;
@@ -456,6 +458,18 @@ export function SelfieSearch({
                 e.target.value = '';
               }}
             />
+            {/* Sem capture: no celular abre o seletor de arquivos (galeria),
+                em vez de forçar a câmera — é a alternativa a "Tirar selfie". */}
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                handleAddFile(e.target.files?.[0]);
+                e.target.value = '';
+              }}
+            />
             <div className={cn(EVENT_PANEL, 'event-stagger text-center')}>
               <div className="mt-0 mx-auto grid size-14 place-items-center rounded-full border border-event-accent/30 bg-event-accent/10 text-event-accent">
                 <Camera className="size-6" strokeWidth={1.5} />
@@ -494,18 +508,28 @@ export function SelfieSearch({
 
               <div className="mt-4 flex flex-col gap-2">
                 {selfies.length < MAX_SELFIES && (
-                  <Button
-                    variant={selfies.length === 0 ? 'default' : 'outline'}
-                    className={selfies.length === 0 ? EVENT_BUTTON : EVENT_BUTTON_OUTLINE}
-                    onClick={() => inputRef.current?.click()}
-                  >
-                    {selfies.length === 0 ? (
-                      <Camera className="size-4" />
-                    ) : (
-                      <Plus className="size-4" />
-                    )}
-                    {selfies.length === 0 ? 'Tirar selfie' : 'Adicionar outra pessoa'}
-                  </Button>
+                  <>
+                    <Button
+                      variant={selfies.length === 0 ? 'default' : 'outline'}
+                      className={selfies.length === 0 ? EVENT_BUTTON : EVENT_BUTTON_OUTLINE}
+                      onClick={() => inputRef.current?.click()}
+                    >
+                      {selfies.length === 0 ? (
+                        <Camera className="size-4" />
+                      ) : (
+                        <Plus className="size-4" />
+                      )}
+                      {selfies.length === 0 ? 'Tirar selfie' : 'Adicionar outra pessoa'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className={EVENT_BUTTON_OUTLINE}
+                      onClick={() => galleryInputRef.current?.click()}
+                    >
+                      <Images className="size-4" />
+                      Escolher da galeria
+                    </Button>
+                  </>
                 )}
                 {selfies.length > 0 && (
                   <Button className={EVENT_BUTTON} onClick={handleSearch}>
