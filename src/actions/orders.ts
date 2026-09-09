@@ -45,6 +45,8 @@ export async function listPublicPlans(eventId: string) {
     name: p.name,
     digitalQuota: p.digitalQuota,
     printQuota: p.printQuota,
+    includesDigital: p.includesDigital,
+    includesPrint: p.includesPrint,
     priceCents: p.priceCents,
     extraDigitalPriceCents: p.extraDigitalPriceCents,
     extraPrintPriceCents: p.extraPrintPriceCents,

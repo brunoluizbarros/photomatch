@@ -38,6 +38,8 @@ function PlanDialog({
   const [name, setName] = useState('');
   const [digitalQuota, setDigitalQuota] = useState('0');
   const [printQuota, setPrintQuota] = useState('0');
+  const [includesDigital, setIncludesDigital] = useState(true);
+  const [includesPrint, setIncludesPrint] = useState(true);
   const [price, setPrice] = useState('0,00');
   const [extraDigitalPrice, setExtraDigitalPrice] = useState('0,00');
   const [extraPrintPrice, setExtraPrintPrice] = useState('0,00');
@@ -53,6 +55,8 @@ function PlanDialog({
       setName('');
       setDigitalQuota('0');
       setPrintQuota('0');
+      setIncludesDigital(true);
+      setIncludesPrint(true);
       setPrice('0,00');
       setExtraDigitalPrice('0,00');
       setExtraPrintPrice('0,00');
@@ -60,6 +64,8 @@ function PlanDialog({
       setName(plan.name);
       setDigitalQuota(String(plan.digitalQuota));
       setPrintQuota(String(plan.printQuota));
+      setIncludesDigital(plan.includesDigital);
+      setIncludesPrint(plan.includesPrint);
       setPrice(centsToReais(plan.priceCents));
       setExtraDigitalPrice(centsToReais(plan.extraDigitalPriceCents));
       setExtraPrintPrice(centsToReais(plan.extraPrintPriceCents));
@@ -85,6 +91,8 @@ function PlanDialog({
       name,
       digitalQuota: Number.parseInt(digitalQuota, 10) || 0,
       printQuota: Number.parseInt(printQuota, 10) || 0,
+      includesDigital,
+      includesPrint,
       priceCents: reaisToCents(price),
       extraDigitalPriceCents: reaisToCents(extraDigitalPrice),
       extraPrintPriceCents: reaisToCents(extraPrintPrice),
@@ -129,54 +137,93 @@ function PlanDialog({
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label htmlFor="plan-digital">Fotos digitais</Label>
-            <Input
-              id="plan-digital"
-              type="number"
-              min={0}
-              value={digitalQuota}
-              onChange={(e) => field(setDigitalQuota)(e.target.value)}
+          <Label htmlFor="plan-includes-digital" className="flex cursor-pointer items-center gap-2">
+            <Checkbox
+              id="plan-includes-digital"
+              checked={includesDigital}
+              onCheckedChange={(v) => {
+                setIncludesDigital(!!v);
+                setDirty(true);
+              }}
             />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="plan-print">Fotos impressas</Label>
-            <Input
-              id="plan-print"
-              type="number"
-              min={0}
-              value={printQuota}
-              onChange={(e) => field(setPrintQuota)(e.target.value)}
+            Inclui digital
+          </Label>
+          <Label htmlFor="plan-includes-print" className="flex cursor-pointer items-center gap-2">
+            <Checkbox
+              id="plan-includes-print"
+              checked={includesPrint}
+              onCheckedChange={(v) => {
+                setIncludesPrint(!!v);
+                setDirty(true);
+              }}
             />
-          </div>
+            Inclui impressa
+          </Label>
+        </div>
+        {!includesDigital && !includesPrint && (
+          <p className="text-[var(--destructive)] text-sm">
+            Marque ao menos uma modalidade — um plano precisa vender algo.
+          </p>
+        )}
+        <div className="grid grid-cols-2 gap-3">
+          {includesDigital && (
+            <div className="space-y-1">
+              <Label htmlFor="plan-digital">Fotos digitais</Label>
+              <Input
+                id="plan-digital"
+                type="number"
+                min={0}
+                value={digitalQuota}
+                onChange={(e) => field(setDigitalQuota)(e.target.value)}
+              />
+            </div>
+          )}
+          {includesPrint && (
+            <div className="space-y-1">
+              <Label htmlFor="plan-print">Fotos impressas</Label>
+              <Input
+                id="plan-print"
+                type="number"
+                min={0}
+                value={printQuota}
+                onChange={(e) => field(setPrintQuota)(e.target.value)}
+              />
+            </div>
+          )}
         </div>
         <div className="space-y-1">
           <Label htmlFor="plan-price">Preço do plano (R$)</Label>
           <Input id="plan-price" value={price} onChange={(e) => field(setPrice)(e.target.value)} />
         </div>
-        <div className="border-[var(--border)] border-t pt-4">
-          <p className="mb-2 text-[var(--muted-foreground)] text-sm">
-            Preço avulso — cobrado por unidade quando o carrinho passa da quota deste plano.
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="plan-extra-digital">Digital avulsa (R$)</Label>
-              <Input
-                id="plan-extra-digital"
-                value={extraDigitalPrice}
-                onChange={(e) => field(setExtraDigitalPrice)(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="plan-extra-print">Impressa avulsa (R$)</Label>
-              <Input
-                id="plan-extra-print"
-                value={extraPrintPrice}
-                onChange={(e) => field(setExtraPrintPrice)(e.target.value)}
-              />
+        {(includesDigital || includesPrint) && (
+          <div className="border-[var(--border)] border-t pt-4">
+            <p className="mb-2 text-[var(--muted-foreground)] text-sm">
+              Preço avulso — cobrado por unidade quando o carrinho passa da quota deste plano.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {includesDigital && (
+                <div className="space-y-1">
+                  <Label htmlFor="plan-extra-digital">Digital avulsa (R$)</Label>
+                  <Input
+                    id="plan-extra-digital"
+                    value={extraDigitalPrice}
+                    onChange={(e) => field(setExtraDigitalPrice)(e.target.value)}
+                  />
+                </div>
+              )}
+              {includesPrint && (
+                <div className="space-y-1">
+                  <Label htmlFor="plan-extra-print">Impressa avulsa (R$)</Label>
+                  <Input
+                    id="plan-extra-print"
+                    value={extraPrintPrice}
+                    onChange={(e) => field(setExtraPrintPrice)(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
         {error && <p className="text-[var(--destructive)] text-sm">{error}</p>}
       </form>
     </Dialog>
@@ -260,12 +307,24 @@ export function EventSalesCard({
                   <div>
                     <p className="font-semibold">{plan.name}</p>
                     <p className="text-[var(--muted-foreground)]">
-                      {plan.digitalQuota} digitais · {plan.printQuota} impressas · R${' '}
-                      {centsToReais(plan.priceCents)}
+                      {[
+                        plan.includesDigital && `${plan.digitalQuota} digitais`,
+                        plan.includesPrint && `${plan.printQuota} impressas`,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}{' '}
+                      · R$ {centsToReais(plan.priceCents)}
                     </p>
                     <p className="text-[var(--muted-foreground)] text-xs">
-                      Avulsa: R$ {centsToReais(plan.extraDigitalPriceCents)} digital · R${' '}
-                      {centsToReais(plan.extraPrintPriceCents)} impressa
+                      Avulsa:{' '}
+                      {[
+                        plan.includesDigital &&
+                          `R$ ${centsToReais(plan.extraDigitalPriceCents)} digital`,
+                        plan.includesPrint &&
+                          `R$ ${centsToReais(plan.extraPrintPriceCents)} impressa`,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
                     </p>
                   </div>
                   <div className="flex gap-2">

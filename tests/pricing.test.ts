@@ -2,6 +2,9 @@ import { type Plan, quoteCart } from '@/lib/pricing';
 import { describe, expect, it } from 'vitest';
 
 const AVULSO = { extraDigitalPriceCents: 500, extraPrintPriceCents: 800 };
+// Toda modalidade liberada por padrão — só os testes de
+// includesDigital/includesPrint (mais abaixo) desligam uma de propósito.
+const BOTH = { includesDigital: true, includesPrint: true };
 
 const BRONZE: Plan = {
   id: 'bronze',
@@ -10,6 +13,7 @@ const BRONZE: Plan = {
   printQuota: 0,
   priceCents: 2000,
   ...AVULSO,
+  ...BOTH,
 };
 const SILVER: Plan = {
   id: 'silver',
@@ -18,6 +22,7 @@ const SILVER: Plan = {
   printQuota: 2,
   priceCents: 4000,
   ...AVULSO,
+  ...BOTH,
 };
 const GOLD: Plan = {
   id: 'gold',
@@ -26,6 +31,7 @@ const GOLD: Plan = {
   printQuota: 5,
   priceCents: 9000,
   ...AVULSO,
+  ...BOTH,
 };
 const PLANS = [BRONZE, SILVER, GOLD];
 
@@ -94,6 +100,7 @@ describe('quoteCart', () => {
       priceCents: 1000,
       extraDigitalPriceCents: 100,
       extraPrintPriceCents: 100,
+      ...BOTH,
     };
     const pricierExtra: Plan = {
       id: 'b',
@@ -103,6 +110,7 @@ describe('quoteCart', () => {
       priceCents: 1000,
       extraDigitalPriceCents: 900,
       extraPrintPriceCents: 900,
+      ...BOTH,
     };
     // Same base price and quota, only the avulso differs -> 'a' wins on the
     // cheaper overflow, proving avulso is read per-plan, not from one shared
@@ -120,6 +128,7 @@ describe('quoteCart', () => {
       printQuota: 5,
       priceCents: 5000,
       ...AVULSO,
+      ...BOTH,
     };
     const b: Plan = {
       id: 'b',
@@ -128,6 +137,7 @@ describe('quoteCart', () => {
       printQuota: 5,
       priceCents: 5000,
       ...AVULSO,
+      ...BOTH,
     };
     const forward = quoteCart({ digitalCount: 2, printCount: 1, plans: [a, b] });
     const reversed = quoteCart({ digitalCount: 2, printCount: 1, plans: [b, a] });
@@ -143,6 +153,7 @@ describe('quoteCart', () => {
       printQuota: 0,
       priceCents: 1000,
       ...AVULSO,
+      ...BOTH,
     };
     const b: Plan = {
       id: 'b',
@@ -151,6 +162,7 @@ describe('quoteCart', () => {
       printQuota: 0,
       priceCents: 1000,
       ...AVULSO,
+      ...BOTH,
     };
     const forward = quoteCart({ digitalCount: 5, printCount: 0, plans: [a, b] });
     const reversed = quoteCart({ digitalCount: 5, printCount: 0, plans: [b, a] });
@@ -165,6 +177,7 @@ describe('quoteCart', () => {
       printQuota: 0,
       priceCents: 1,
       ...AVULSO,
+      ...BOTH,
     };
     const quote = quoteCart({ digitalCount: 1, printCount: 0, plans: [zero, GOLD] });
     // zero never covers a non-empty cart; GOLD does, so GOLD wins even though
@@ -182,6 +195,7 @@ describe('quoteCart', () => {
       priceCents: 2000,
       extraDigitalPriceCents: 0,
       extraPrintPriceCents: 0,
+      ...BOTH,
     };
     const quote = quoteCart({ digitalCount: 4, printCount: 0, plans: [noExtra] });
     expect(quote.unavailable).toBe(true);
@@ -192,5 +206,70 @@ describe('quoteCart', () => {
     const quote = quoteCart({ digitalCount: 20, printCount: 20, plans: [GOLD] });
     expect(quote.remainingDigital).toBeGreaterThanOrEqual(0);
     expect(quote.remainingPrint).toBeGreaterThanOrEqual(0);
+  });
+
+  it('a print-only plan (includesDigital false) never covers a cart with digital items, even with quota to spare', () => {
+    const printOnly: Plan = {
+      id: 'print-only',
+      name: 'Só impressa',
+      digitalQuota: 99, // quota alta de propósito: includesDigital=false tem que vencer mesmo assim
+      printQuota: 5,
+      priceCents: 3000,
+      ...AVULSO,
+      includesDigital: false,
+      includesPrint: true,
+    };
+    const digitalCart = quoteCart({ digitalCount: 1, printCount: 0, plans: [printOnly] });
+    expect(digitalCart.unavailable).toBe(true);
+
+    const printCart = quoteCart({ digitalCount: 0, printCount: 2, plans: [printOnly] });
+    expect(printCart.plan?.id).toBe('print-only');
+    expect(printCart.unavailable).toBe(false);
+  });
+
+  it('a digital-only plan (includesPrint false) never covers a cart with print items', () => {
+    const digitalOnly: Plan = {
+      id: 'digital-only',
+      name: 'Só digital',
+      digitalQuota: 5,
+      printQuota: 99,
+      priceCents: 3000,
+      ...AVULSO,
+      includesDigital: true,
+      includesPrint: false,
+    };
+    const printCart = quoteCart({ digitalCount: 0, printCount: 1, plans: [digitalOnly] });
+    expect(printCart.unavailable).toBe(true);
+
+    const digitalCart = quoteCart({ digitalCount: 2, printCount: 0, plans: [digitalOnly] });
+    expect(digitalCart.plan?.id).toBe('digital-only');
+  });
+
+  it('mixed cart picks the plan that includes both modalities over one that excludes a modality but is cheaper', () => {
+    const cheapPrintOnly: Plan = {
+      id: 'cheap-print-only',
+      name: 'Barato só impressa',
+      digitalQuota: 99,
+      printQuota: 99,
+      priceCents: 1000,
+      ...AVULSO,
+      includesDigital: false,
+      includesPrint: true,
+    };
+    const pricierBoth: Plan = {
+      id: 'pricier-both',
+      name: 'Mais caro completo',
+      digitalQuota: 5,
+      printQuota: 5,
+      priceCents: 5000,
+      ...AVULSO,
+      ...BOTH,
+    };
+    const quote = quoteCart({
+      digitalCount: 1,
+      printCount: 1,
+      plans: [cheapPrintOnly, pricierBoth],
+    });
+    expect(quote.plan?.id).toBe('pricier-both');
   });
 });

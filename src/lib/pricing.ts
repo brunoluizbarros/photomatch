@@ -15,6 +15,10 @@ export type Plan = {
   name: string;
   digitalQuota: number;
   printQuota: number;
+  // Modalidade existe ou não neste plano — diferente de quota=0 (que ainda
+  // vende avulso). false bloqueia a modalidade de vez, em qualquer preço.
+  includesDigital: boolean;
+  includesPrint: boolean;
   priceCents: number;
   extraDigitalPriceCents: number;
   extraPrintPriceCents: number;
@@ -59,6 +63,12 @@ function compareLargest(a: Plan, b: Plan): number {
 }
 
 function quoteFor(plan: Plan, digitalCount: number, printCount: number): Quote | null {
+  // Modalidade ausente no plano: nenhum preço a cobrar torna isto vendável —
+  // checado antes da quota, não depois (quota=0 + avulso=0 já bloqueava por
+  // acidente; isto bloqueia de propósito, mesmo se a quota ficou > 0).
+  if (digitalCount > 0 && !plan.includesDigital) return null;
+  if (printCount > 0 && !plan.includesPrint) return null;
+
   const extraDigital = Math.max(0, digitalCount - plan.digitalQuota);
   const extraPrint = Math.max(0, printCount - plan.printQuota);
 
@@ -110,7 +120,11 @@ export function quoteCart(input: {
   if (plans.length === 0) return { ...EMPTY_QUOTE, unavailable: true };
 
   const covering = plans.filter(
-    (plan) => plan.digitalQuota >= digitalCount && plan.printQuota >= printCount,
+    (plan) =>
+      plan.digitalQuota >= digitalCount &&
+      plan.printQuota >= printCount &&
+      (digitalCount === 0 || plan.includesDigital) &&
+      (printCount === 0 || plan.includesPrint),
   );
   if (covering.length > 0) {
     const cheapest = [...covering].sort(compareCheapest)[0];

@@ -32,6 +32,8 @@ type PlanInput = {
   name: string;
   digitalQuota: number;
   printQuota: number;
+  includesDigital: boolean;
+  includesPrint: boolean;
   priceCents: number;
   extraDigitalPriceCents: number;
   extraPrintPriceCents: number;
@@ -40,6 +42,9 @@ type PlanInput = {
 function validatePlanInput(input: PlanInput) {
   const name = input.name.trim();
   if (!name) return { ok: false as const, error: 'Nome é obrigatório.' };
+  if (!input.includesDigital && !input.includesPrint) {
+    return { ok: false as const, error: 'O plano precisa incluir digital, impressa ou ambos.' };
+  }
   if (
     input.digitalQuota < 0 ||
     input.printQuota < 0 ||
@@ -53,11 +58,16 @@ function validatePlanInput(input: PlanInput) {
     ok: true as const,
     values: {
       name,
-      digitalQuota: Math.trunc(input.digitalQuota),
-      printQuota: Math.trunc(input.printQuota),
+      // Modalidade ausente: quota dela não faz sentido — zera pra não deixar
+      // um resquício de quota "morta" (ex: digitalQuota=5 num plano só
+      // impressa) confundir quem for ler o plano depois.
+      digitalQuota: input.includesDigital ? Math.trunc(input.digitalQuota) : 0,
+      printQuota: input.includesPrint ? Math.trunc(input.printQuota) : 0,
+      includesDigital: input.includesDigital,
+      includesPrint: input.includesPrint,
       priceCents: Math.trunc(input.priceCents),
-      extraDigitalPriceCents: Math.trunc(input.extraDigitalPriceCents),
-      extraPrintPriceCents: Math.trunc(input.extraPrintPriceCents),
+      extraDigitalPriceCents: input.includesDigital ? Math.trunc(input.extraDigitalPriceCents) : 0,
+      extraPrintPriceCents: input.includesPrint ? Math.trunc(input.extraPrintPriceCents) : 0,
     },
   };
 }
